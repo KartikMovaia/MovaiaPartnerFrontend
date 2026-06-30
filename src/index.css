@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Default (Movaia) brand tokens — overridden per-partner by PartnerThemeProvider */
+  --brand-primary: #abd037;
+  --brand-primary-hover: #98b830;
+  --brand-on-primary: #0f1115;
+  --brand-accent: #3b82f6;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #ffffff;
+  color: #171717;
+}

@@ -1,0 +1,28 @@
+# ── Dependencies ───────────────────────────────────────────────────────────
+node_modules/
+
+# ── Build output ───────────────────────────────────────────────────────────
+dist/
+dist-ssr/
+*.local
+*.tsbuildinfo
+
+# ── Environment & secrets (never commit real values) ───────────────────────
+# Note: only VITE_-prefixed vars reach the browser bundle — never put secrets here.
+.env
+.env.*
+!.env.example
+
+# ── Logs ───────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Editor & OS cruft ──────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
