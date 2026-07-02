@@ -32,4 +32,13 @@ export const storeService = {
   async update(id: string, patch: { name?: string; location?: string; isActive?: boolean }) {
     await api.patch(`/stores/${id}`, patch);
   },
+  // Outlet-admin provisioning (partner-admin only; scoped to the caller's partner).
+  async listOutletAdmins(storeId?: string) {
+    const { data } = await api.get('/stores/admins', { params: storeId ? { storeId } : {} });
+    return data.admins as Array<any>;
+  },
+  async provisionOutletAdmin(input: { storeId: string; email: string; firstName: string; lastName: string }) {
+    const { data } = await api.post('/stores/admins', input);
+    return data as { partnerUserId: string; tempPassword: string };
+  },
 };

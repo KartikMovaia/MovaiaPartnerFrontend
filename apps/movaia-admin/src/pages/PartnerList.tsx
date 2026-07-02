@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus } from 'lucide-react';
-import { partnerService } from '@shared/services/partner.service';
+import { adminAnalyticsService, PartnersOverview } from '@shared/services/analytics.service';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 
 export default function PartnerList() {
-  const [partners, setPartners] = useState<any[] | null>(null);
+  const [data, setData] = useState<PartnersOverview | null>(null);
 
   useEffect(() => {
-    partnerService.list().then(setPartners).catch(() => setPartners([]));
+    adminAnalyticsService.partnersOverview().then(setData).catch(() => setData(null));
   }, []);
 
-  if (!partners) return <LoadingSpinner label="Loading partners…" />;
+  if (!data) return <LoadingSpinner label="Loading partners…" />;
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-10">
@@ -26,19 +26,26 @@ export default function PartnerList() {
         </Link>
       </div>
 
+      <div className="mb-6 grid grid-cols-3 gap-4">
+        <Stat label="Partners" value={data.totals.partners} />
+        <Stat label="Analyses (all time)" value={data.totals.scans} />
+        <Stat label="Analyses (30 days)" value={data.totals.last30Days} />
+      </div>
+
       <div className="overflow-hidden rounded-xl border border-neutral-200">
         <table className="w-full text-left text-sm">
           <thead className="bg-neutral-50 text-neutral-600">
             <tr>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Slug</th>
-              <th className="px-4 py-3">Stores</th>
-              <th className="px-4 py-3">Scans</th>
+              <th className="px-4 py-3">Outlets</th>
+              <th className="px-4 py-3">Analyses</th>
+              <th className="px-4 py-3">Last 30d</th>
               <th className="px-4 py-3">Status</th>
             </tr>
           </thead>
           <tbody>
-            {partners.map((p) => (
+            {data.partners.map((p) => (
               <tr key={p.id} className="border-t border-neutral-200 hover:bg-neutral-50">
                 <td className="px-4 py-3">
                   <Link to={`/admin/partners/${p.id}`} className="text-neutral-900 hover:underline">
@@ -46,16 +53,17 @@ export default function PartnerList() {
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-neutral-600">{p.slug}</td>
-                <td className="px-4 py-3">{p._count?.stores ?? 0}</td>
-                <td className="px-4 py-3">{p._count?.scans ?? 0}</td>
+                <td className="px-4 py-3">{p.storeCount}</td>
+                <td className="px-4 py-3">{p.scanCount}</td>
+                <td className="px-4 py-3">{p.last30Days}</td>
                 <td className="px-4 py-3">
                   <span className={p.status === 'ACTIVE' ? 'text-green-600' : 'text-red-600'}>{p.status}</span>
                 </td>
               </tr>
             ))}
-            {partners.length === 0 && (
+            {data.partners.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-neutral-500">
+                <td colSpan={6} className="px-4 py-8 text-center text-neutral-500">
                   No partners yet.
                 </td>
               </tr>
@@ -63,6 +71,15 @@ export default function PartnerList() {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-2xl border border-neutral-200 bg-white p-5">
+      <p className="text-3xl font-bold text-neutral-900">{value}</p>
+      <p className="mt-1 text-xs text-neutral-600">{label}</p>
     </div>
   );
 }

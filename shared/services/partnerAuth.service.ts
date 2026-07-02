@@ -7,6 +7,9 @@ export interface Staff {
   partnerId?: string;
   partnerSlug?: string;
   partnerName?: string;
+  // Set for OUTLET_ADMIN staff — their single outlet's id + name.
+  storeId?: string;
+  storeName?: string;
   role?: string;
   mustChangePassword?: boolean;
 }

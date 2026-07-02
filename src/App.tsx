@@ -19,6 +19,7 @@ const PartnerDetail = lazy(() => import('@apps/movaia-admin/src/pages/PartnerDet
 // Partner admin
 const BrandingSettings = lazy(() => import('@apps/partner-admin/src/pages/BrandingSettings'));
 const StoreManagement = lazy(() => import('@apps/partner-admin/src/pages/StoreManagement'));
+const OutletAdmins = lazy(() => import('@apps/partner-admin/src/pages/OutletAdmins'));
 const AnalyticsDashboard = lazy(() => import('@apps/partner-admin/src/pages/AnalyticsDashboard'));
 
 // Kiosk
@@ -71,7 +72,9 @@ export default function App() {
           }
         />
 
-        {/* Partner admins */}
+        {/* Partner surface. The dashboard is shared by PARTNER_ADMIN and
+            OUTLET_ADMIN (it renders a scoped view for outlets); the management
+            pages below are PARTNER_ADMIN-only. */}
         <Route
           path="/partner"
           element={
@@ -83,7 +86,7 @@ export default function App() {
         <Route
           path="/partner/branding"
           element={
-            <ProtectedRoute kind="PARTNER" loginPath="/partner/login">
+            <ProtectedRoute kind="PARTNER" role="PARTNER_ADMIN" loginPath="/partner/login">
               <BrandingSettings />
             </ProtectedRoute>
           }
@@ -91,8 +94,16 @@ export default function App() {
         <Route
           path="/partner/stores"
           element={
-            <ProtectedRoute kind="PARTNER" loginPath="/partner/login">
+            <ProtectedRoute kind="PARTNER" role="PARTNER_ADMIN" loginPath="/partner/login">
               <StoreManagement />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/partner/outlet-admins"
+          element={
+            <ProtectedRoute kind="PARTNER" role="PARTNER_ADMIN" loginPath="/partner/login">
+              <OutletAdmins />
             </ProtectedRoute>
           }
         />
