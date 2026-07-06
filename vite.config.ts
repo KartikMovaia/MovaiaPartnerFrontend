@@ -13,6 +13,14 @@ export default defineConfig({
   },
   server: {
     port: 5174, // distinct from Movaia's 5173 so both can run locally
+    // Proxy the API so the browser talks to a single origin — the httpOnly auth
+    // cookie stays first-party (SameSite=Lax works) with no CORS/preflight.
+    proxy: {
+      '/api': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     rollupOptions: {

@@ -1,13 +1,22 @@
+// Analytics — real API. Partner-staff endpoints are scoped server-side (an
+// OUTLET_ADMIN only ever sees their store); the admin endpoints are Movaia-only.
 import { api } from './api.service';
 
 export type ScanStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 
+// A single point on the "Analyses over time" chart.
+export interface TrendPoint {
+  label: string;
+  scans: number;
+}
+
 export interface AnalyticsOverview {
   // storeId is set when the caller is an OUTLET_ADMIN (scoped to one store).
   scope: { partnerId: string; storeId: string | null };
-  totals: { allTime: number; last30Days: number };
+  totals: { allTime: number; last30Days: number; reportsSent: number };
   funnel: { pending: number; processing: number; completed: number; failed: number };
   byStore: Array<{ storeId: string | null; storeName: string | null; scans: number }>;
+  trend: TrendPoint[];
 }
 
 // One scan row. Customer contact is PII — only ever returned within the
@@ -36,13 +45,13 @@ export interface ScanPage {
 export const analyticsService = {
   async overview(): Promise<AnalyticsOverview> {
     const { data } = await api.get('/analytics/overview');
-    return data;
+    return data as AnalyticsOverview;
   },
   async scans(
     params: { page?: number; pageSize?: number; storeId?: string; status?: ScanStatus } = {}
   ): Promise<ScanPage> {
     const { data } = await api.get('/analytics/scans', { params });
-    return data;
+    return data as ScanPage;
   },
 };
 
@@ -60,10 +69,11 @@ export interface PartnerRow {
 export interface PartnersOverview {
   totals: { partners: number; scans: number; last30Days: number };
   partners: PartnerRow[];
+  trend: TrendPoint[];
 }
 
 export interface PartnerAnalyticsDetail {
-  partner: { id: string; name: string; slug: string; status: string };
+  partner: { id: string; name: string; slug: string; status: string; createdAt: string };
   totals: { allTime: number; last30Days: number };
   funnel: { pending: number; processing: number; completed: number; failed: number };
   byStore: Array<{ storeId: string; storeName: string; isActive: boolean; scans: number }>;
@@ -73,10 +83,10 @@ export interface PartnerAnalyticsDetail {
 export const adminAnalyticsService = {
   async partnersOverview(): Promise<PartnersOverview> {
     const { data } = await api.get('/admin-analytics/partners');
-    return data;
+    return data as PartnersOverview;
   },
   async partnerDetail(id: string): Promise<PartnerAnalyticsDetail> {
     const { data } = await api.get(`/admin-analytics/partners/${id}`);
-    return data;
+    return data as PartnerAnalyticsDetail;
   },
 };

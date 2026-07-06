@@ -116,10 +116,23 @@ secrets here** — anything in this file ships to the client.
 npm run build        # outputs static assets to dist/
 ```
 
-Deploy `dist/` to any static host. The included [`vercel.json`](vercel.json) rewrites all
-paths to `index.html` so client-side routing works on deep links (e.g. `/kiosk/acme`).
-Set `VITE_API_URL` to the production backend URL in your host's environment settings
-before building.
+Deploy `dist/` to any static host. [`vercel.json`](vercel.json) rewrites app paths to
+`index.html` so client-side routing works on deep links (e.g. `/kiosk/acme`).
+
+**How the browser reaches the API — pick one (the auth cookie forces the choice):**
+
+- **Same-origin proxy (recommended).** Leave `VITE_API_URL` **blank** and let `vercel.json`
+  proxy `/api/*` to the backend. Edit `vercel.json` and replace
+  `REPLACE-WITH-BACKEND-HOST` with your backend origin. The `/api` rewrite must stay
+  **before** the SPA catch-all. This keeps the httpOnly auth cookie first-party
+  (`SameSite=Lax`) with no CORS/preflight — the setup the backend already issues.
+- **Cross-origin.** Delete the `/api` rewrite and set `VITE_API_URL` to the backend origin
+  (e.g. `https://api.example.com/api`). The browser then calls the backend directly, which
+  requires the backend to issue **`SameSite=None; Secure`** cookies and to list this origin
+  in `CORS_ORIGINS`.
+
+> ⚠️ Without one of these, `/api/*` calls fall through to the SPA rewrite and return
+> `index.html` instead of JSON — the app will appear to load but every request fails.
 
 ---
 

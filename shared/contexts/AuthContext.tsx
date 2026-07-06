@@ -1,7 +1,6 @@
 // Staff auth state (partner admins + Movaia staff). Mirrors Movaia's AuthContext.
 import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { partnerAuthService, Staff } from '@shared/services/partnerAuth.service';
-import { tokenStore } from '@shared/services/api.service';
 
 interface AuthValue {
   staff: Staff | null;
@@ -26,11 +25,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!tokenStore.get()) {
-      setStaff(null);
-      setLoading(false);
-      return;
-    }
+    // The httpOnly cookie isn't readable here, so always probe /me. If the
+    // access token expired, the axios layer silently refreshes; only a truly
+    // signed-out user falls through to staff=null.
     try {
       setStaff(await partnerAuthService.me());
     } catch {
