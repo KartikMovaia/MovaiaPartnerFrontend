@@ -1,5 +1,5 @@
 // Movaia internal — Platform overview (all partners).
-// Dark sidebar signals the internal domain; content is the canvas surface.
+// Uses the shared light admin chrome; content is the canvas surface.
 // Design reference: "Movaia Gyms & Clubs.dc.html" lines 718–776.
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -64,7 +64,7 @@ export default function MovaiaDashboard() {
 
           {/* KPIs */}
           <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard tone="dark" label="Partners" value={fmtNum(data.totals.partners)} sub={`${activeThisMonth} active this month`} />
+            <StatCard label="Partners" value={fmtNum(data.totals.partners)} sub={`${activeThisMonth} active this month`} />
             <StatCard label="Total analyses" value={fmtNum(data.totals.scans)} sub="all-time" />
             <StatCard label="This month" value={fmtNum(data.totals.last30Days)} sub="last 30 days" />
             <StatCard label="Active outlets" value={fmtNum(totalOutlets)} sub={`across ${fmtNum(data.totals.partners)} partners`} />

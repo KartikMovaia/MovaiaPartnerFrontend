@@ -1,10 +1,6 @@
 {
-  "$comment": "The /api proxy MUST come before the SPA catch-all. Replace REPLACE-WITH-BACKEND-HOST with your deployed backend origin (e.g. movaia-partners-api.up.railway.app). This same-origin proxy keeps the httpOnly auth cookie first-party (SameSite=Lax). See README 'Build & deploy'. Alternative: delete the /api rewrite and set VITE_API_URL to the backend origin, but then the backend must issue SameSite=None; Secure cookies.",
+  "$comment": "SPA fallback only. The backend /api rewrite was removed while the backend is rebuilt — re-add it (before the catch-all below) pointing at the deployed backend origin.",
   "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://REPLACE-WITH-BACKEND-HOST/api/:path*"
-    },
     {
       "source": "/(.*)",
       "destination": "/index.html"

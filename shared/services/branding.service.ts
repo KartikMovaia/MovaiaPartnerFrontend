@@ -1,5 +1,4 @@
-// Branding — real API. Public branding themes the kiosk/partner surfaces; the
-// partner-admin read/update + logo upload edit the caller's own branding.
+// Branding — public partner theming + the partner-admin branding editor.
 import { api } from './api.service';
 
 export interface Branding {
@@ -21,27 +20,13 @@ function fileToDataUrl(file: File): Promise<string> {
 }
 
 export const brandingService = {
-  // Public — themes the kiosk/partner surfaces. 404s for a missing or suspended
-  // partner (callers fall back to the default theme).
+  // Public — the theme the kiosk/partner surfaces render for a partner slug.
+  // (No auth; a 404 for an unknown/suspended partner → callers use the default theme.)
   async getPublicBranding(slug: string): Promise<{
-    partner: {
-      id: string;
-      name: string;
-      slug: string;
-      branding: Branding | null;
-      stores: Array<{ id: string; name: string }>;
-    };
+    partner: { id: string; name: string; slug: string; branding: Branding | null };
   }> {
     const { data } = await api.get(`/public/branding/${slug}`);
-    return data as {
-      partner: {
-        id: string;
-        name: string;
-        slug: string;
-        branding: Branding | null;
-        stores: Array<{ id: string; name: string }>;
-      };
-    };
+    return data;
   },
 
   // Partner-admin — read/update own branding.
@@ -62,13 +47,13 @@ export const brandingService = {
     return data;
   },
 
-  // Presigned S3 PUT (prod). Falls back to an inline data URL when S3 isn't
-  // configured (dev), so logo upload works in every environment.
+  // Presigned S3 PUT (prod). Falls back to an inline data URL when the presigned
+  // upload isn't reachable (e.g. the dev S3 stub), so logo upload works anywhere.
   async uploadLogo(file: File): Promise<{ branding: Branding }> {
     try {
       const { uploadUrl, publicUrl } = await brandingService.requestLogoUpload(file.type);
       const put = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
-      if (!put.ok) throw new Error('S3 upload failed');
+      if (!put.ok) throw new Error('upload failed');
       return brandingService.saveLogo(publicUrl);
     } catch {
       return brandingService.saveLogo(await fileToDataUrl(file));

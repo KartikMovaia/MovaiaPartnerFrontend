@@ -1,7 +1,6 @@
-// Staff auth (partner admins + Movaia staff), backed by the real API. Tokens
-// live in httpOnly cookies (handled in api.service); these calls only exchange
-// the staff *profile* the UI renders.
-import { api } from './api.service';
+// Staff auth (partner admins + Movaia staff). Login/refresh return Bearer tokens
+// (stored via api.service); these calls exchange the staff profile the UI renders.
+import { api, tokens } from './api.service';
 
 export interface Staff {
   id: string;
@@ -17,21 +16,19 @@ export interface Staff {
   mustChangePassword?: boolean;
 }
 
-// In-memory snapshot of the signed-in staff, synced from real login/me
-// responses. Replaces the old localStorage mock identity. It exists so the
-// (still-mock) analytics service can scope an outlet admin's view until Phase 2
-// makes scoping a backend concern; AuthContext is the source of truth for the UI.
+// In-memory snapshot of the signed-in staff, synced from login/me responses.
 let current: Staff | null = null;
 export function currentStaff(): Staff | null {
   return current;
 }
 
 export const partnerAuthService = {
-  // Audience-scoped login: PARTNER → /login, MOVAIA → /staff-login. The backend
-  // sets the auth cookies and returns only the staff profile.
+  // Audience-scoped login: PARTNER → /login, MOVAIA → /staff-login. Stores the
+  // returned tokens; returns the staff profile.
   async login(email: string, password: string, kind: 'PARTNER' | 'MOVAIA' = 'PARTNER'): Promise<Staff> {
     const path = kind === 'MOVAIA' ? '/partner-auth/staff-login' : '/partner-auth/login';
     const { data } = await api.post(path, { email, password });
+    tokens.set(data.accessToken, data.refreshToken);
     current = data.staff as Staff;
     return current;
   },
@@ -51,6 +48,7 @@ export const partnerAuthService = {
       await api.post('/partner-auth/logout');
     } finally {
       current = null;
+      tokens.clear();
     }
   },
 };

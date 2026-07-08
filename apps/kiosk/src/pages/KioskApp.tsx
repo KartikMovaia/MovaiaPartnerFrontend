@@ -41,7 +41,53 @@ interface Recognized {
   initials?: string;
 }
 
+// What the Welcome form collects and hands to identify(). Height/weight are
+// normalized to canonical units (cm / kg) inside the form before they get here.
+interface IdentifyDetails {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  heightCm: number;
+  weightKg: number;
+}
+
 const MOVAIA_LOGO = '/assets/movaia-logo.png';
+// Brand hero shown beside the details form on wider screens — mirrors the
+// Movaia login page's right panel (full-bleed photo + tagline + feature list).
+const WELCOME_IMAGE = '/assets/kiosk-welcome.jpg';
+
+// The three selling points listed over the hero photo (icons match the login).
+const HERO_FEATURES = [
+  {
+    title: 'AI Analysis',
+    body: 'Get AI-powered insights to improve your performance and lower injury risk.',
+    icon: (
+      <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+        <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Personalized Insights',
+    body: 'Tailored recommendations for your running style.',
+    icon: (
+      <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Track Progress',
+    body: 'Monitor your improvement over time.',
+    icon: (
+      <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+      </svg>
+    ),
+  },
+];
 
 export default function KioskApp() {
   const { slug } = useParams();
@@ -125,7 +171,7 @@ function DeviceSetup({
       const b = await kioskService.deviceLogin(email.trim(), password);
       if (slug && b.partnerSlug !== slug) {
         setError(`That account belongs to ${b.partnerName}, not this kiosk (“${slug}”).`);
-        await kioskService.deviceLogout().catch(() => {});
+        await kioskService.deviceLogout(email.trim(), password).catch(() => {});
         return;
       }
       onBound();
@@ -250,18 +296,15 @@ function KioskFlow() {
     );
   }
 
-  const identify = async (fullName: string, email: string, phone: string) => {
-    // The kiosk collects a single "Full name", but the backend + Movaia both
-    // require a first AND last name — split it (mononyms reuse the one token).
-    const parts = fullName.trim().split(/\s+/);
-    const firstName = parts[0] || fullName.trim();
-    const lastName = parts.length > 1 ? parts.slice(1).join(' ') : firstName;
+  const identify = async (d: IdentifyDetails) => {
     const res = await kioskService.identify({
       kioskSessionId: sessionRef.current,
-      firstName,
-      lastName,
-      email,
-      phone: phone || undefined,
+      firstName: d.firstName,
+      lastName: d.lastName,
+      email: d.email,
+      phone: d.phone || undefined,
+      heightCm: d.heightCm,
+      weightKg: d.weightKg,
       consent: true,
     });
     scanRef.current = res.scanId;
@@ -338,10 +381,26 @@ function KioskFlow() {
 
 /* ─────────────────────────── shared bits ─────────────────────────── */
 
-// Partner wordmark (first word in the brand color, the rest in ink) — stands in
-// for an uploaded logo in the prototype.
-function Wordmark({ theme, size = 26 }: { theme: PartnerTheme; size?: number }) {
-  if (theme.logoUrl) return <img src={theme.logoUrl} alt={theme.displayName} style={{ height: size }} />;
+// Partner logo: renders the uploaded image when present, otherwise falls back to
+// a generated wordmark (first word in the brand color, the rest in ink). The same
+// fallback covers a broken upload — if the image 404s (e.g. a deleted/expired S3
+// object) we remember the bad URL and drop through to the wordmark instead of
+// showing a broken-image icon.
+function Wordmark({ theme, size = 26, logoHeight = 46 }: { theme: PartnerTheme; size?: number; logoHeight?: number }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const { logoUrl } = theme;
+  if (logoUrl && logoUrl !== failedUrl) {
+    return (
+      <img
+        src={logoUrl}
+        alt={theme.displayName}
+        // An uploaded logo gets more room than the generated wordmark, but is
+        // bounded so a very wide mark can't crowd the "Powered by" logo.
+        style={{ height: logoHeight, maxWidth: 280, objectFit: 'contain' }}
+        onError={() => setFailedUrl(logoUrl)}
+      />
+    );
+  }
   const [first, ...rest] = theme.displayName.toUpperCase().split(' ');
   return (
     <div className="flex items-baseline" style={{ gap: 2 }}>
@@ -383,29 +442,132 @@ const eyebrow: React.CSSProperties = {
   color: 'var(--brand-primary)',
 };
 
+/* ───────────────────────── height / weight units ───────────────────────── */
+
+type HeightUnit = 'cm' | 'ft';
+type WeightUnit = 'kg' | 'lb';
+const HEIGHT_UNITS: readonly HeightUnit[] = ['cm', 'ft'];
+const WEIGHT_UNITS: readonly WeightUnit[] = ['kg', 'lb'];
+
+// Sanity bounds (canonical units) — reject typos, not real people.
+const HEIGHT_MIN_CM = 90;
+const HEIGHT_MAX_CM = 250;
+const WEIGHT_MIN_KG = 30;
+const WEIGHT_MAX_KG = 250;
+
+const CM_PER_INCH = 2.54;
+const KG_PER_LB = 0.45359237;
+
+// Normalize the form's height inputs to whole centimetres (null = not yet valid).
+function heightToCm(unit: HeightUnit, cm: string, ft: string, inch: string): number | null {
+  if (unit === 'cm') {
+    const v = parseFloat(cm);
+    return Number.isFinite(v) ? Math.round(v) : null;
+  }
+  const f = parseFloat(ft);
+  if (!Number.isFinite(f)) return null;
+  const i = inch.trim() === '' ? 0 : parseFloat(inch); // inches optional (e.g. exactly 6 ft)
+  if (!Number.isFinite(i)) return null;
+  return Math.round((f * 12 + i) * CM_PER_INCH);
+}
+
+// Normalize the form's weight input to whole kilograms (null = not yet valid).
+function weightToKg(unit: WeightUnit, value: string): number | null {
+  const v = parseFloat(value);
+  if (!Number.isFinite(v)) return null;
+  return unit === 'kg' ? Math.round(v) : Math.round(v * KG_PER_LB);
+}
+
+// Compact two-option unit switch (cm/ft, kg/lb) sized to sit beside a 66px input.
+function SegToggle<T extends string>({
+  value,
+  options,
+  onChange,
+  ariaLabel,
+}: {
+  value: T;
+  options: readonly T[];
+  onChange: (v: T) => void;
+  ariaLabel: string;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label={ariaLabel}
+      className="flex h-[66px] flex-none overflow-hidden rounded-[14px] border-2"
+      style={{ borderColor: '#e4e4e4' }}
+    >
+      {options.map((opt, i) => {
+        const active = opt === value;
+        return (
+          <button
+            key={opt}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onChange(opt)}
+            className="px-4 text-[17px] font-bold outline-none"
+            style={{
+              background: active ? 'var(--brand-primary)' : '#fff',
+              color: active ? 'var(--brand-on-primary)' : '#9a9a9a',
+              borderLeft: i > 0 ? '2px solid #e4e4e4' : undefined,
+            }}
+          >
+            {opt}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ─────────────────────────── 01 · Welcome ─────────────────────────── */
 
-function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (n: string, e: string, p: string) => Promise<void> }) {
-  const [name, setName] = useState('');
+function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: IdentifyDetails) => Promise<void> }) {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [heightUnit, setHeightUnit] = useState<HeightUnit>('cm');
+  const [heightCm, setHeightCm] = useState('');
+  const [heightFt, setHeightFt] = useState('');
+  const [heightIn, setHeightIn] = useState('');
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>('kg');
+  const [weight, setWeight] = useState('');
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const ready = name.trim() !== '' && emailValid && consent;
+  const cm = heightToCm(heightUnit, heightCm, heightFt, heightIn);
+  const kg = weightToKg(weightUnit, weight);
+  const heightValid = cm !== null && cm >= HEIGHT_MIN_CM && cm <= HEIGHT_MAX_CM;
+  const weightValid = kg !== null && kg >= WEIGHT_MIN_KG && kg <= WEIGHT_MAX_KG;
+  const ready =
+    firstName.trim() !== '' && lastName.trim() !== '' && emailValid && heightValid && weightValid && consent;
 
   const start = async () => {
     if (busy) return;
-    if (!name.trim()) return setError('Please enter your name.');
+    if (!firstName.trim()) return setError('Please enter your first name.');
+    if (!lastName.trim()) return setError('Please enter your last name.');
     if (!email.trim()) return setError('Please enter your email so we can send your report.');
     if (!emailValid) return setError('Please enter a valid email address.');
     if (phone.trim() && phone.replace(/\D/g, '').length < 7) return setError('Please enter a valid phone number, or leave it blank.');
+    if (cm === null) return setError('Please enter your height.');
+    if (!heightValid) return setError('Please enter a realistic height.');
+    if (kg === null) return setError('Please enter your weight.');
+    if (!weightValid) return setError('Please enter a realistic weight.');
     if (!consent) return setError('Please agree to the consent to continue.');
     setError(null);
     setBusy(true);
     try {
-      await onStart(name.trim(), email.trim(), phone.trim());
+      await onStart({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        heightCm: cm,
+        weightKg: kg,
+      });
     } catch {
       setError('Something went wrong. Please try again or ask a team member.');
     } finally {
@@ -414,11 +576,19 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (n: string,
   };
 
   const input = 'h-[66px] rounded-[14px] border-2 px-[22px] text-[20px] outline-none';
+  // Numeric fields (height/weight) share a tighter, centred variant so a value
+  // plus its unit toggle fit two-up on one row.
+  const numInput = 'h-[66px] w-0 flex-1 rounded-[14px] border-2 px-[14px] text-[20px] text-center outline-none';
 
   return (
-    <Screen>
-      <KioskHeader theme={theme} />
-      <div className="flex flex-1 flex-col justify-center gap-7 px-[90px]">
+    <div className="flex min-h-screen w-full bg-white">
+      {/* Left: intro + details form. This is the only column below `lg`; the
+          photo panel to the right appears once there's room to spare. `min-w-0`
+          lets this flex column shrink below its content's intrinsic width so
+          the header/inputs never overflow on narrow screens. */}
+      <div className="flex min-h-screen flex-1 flex-col min-w-0">
+        <KioskHeader theme={theme} />
+        <div className="flex flex-1 flex-col justify-center gap-7 px-6 sm:px-10 lg:px-12 xl:px-16 2xl:px-[90px]">
         <div className="flex flex-col gap-2.5">
           <span className="text-[14px]" style={eyebrow}>Running gait analysis</span>
           <h1 className="m-0 text-[46px] font-extrabold leading-[1.05]" style={{ letterSpacing: '-1px' }}>
@@ -429,10 +599,32 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (n: string,
           </p>
         </div>
         <div className="flex max-w-[620px] flex-col gap-3.5">
-          <input className={input} aria-label="Full name" style={{ borderColor: '#e4e4e4' }} placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} />
+          {/* Name — first + last, side by side */}
+          <div className="flex gap-3.5">
+            <input className={`${input} min-w-0 flex-1`} aria-label="First name" autoComplete="off" style={{ borderColor: '#e4e4e4' }} placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            <input className={`${input} min-w-0 flex-1`} aria-label="Last name" autoComplete="off" style={{ borderColor: '#e4e4e4' }} placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+          </div>
           <input className={input} type="email" inputMode="email" autoComplete="off" aria-label="Email address" style={{ borderColor: 'var(--brand-primary)' }} placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} />
           <input className={input} type="tel" inputMode="tel" autoComplete="off" aria-label="Phone number (optional)" style={{ borderColor: '#e4e4e4' }} placeholder="Phone number (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
-          <span className="pl-1 text-[14px]" style={{ color: '#9a9a9a' }}>We’ll email your report here. Phone is optional.</span>
+          {/* Height + weight — value(s) with a unit toggle each */}
+          <div className="flex gap-3.5">
+            <div className="flex min-w-0 flex-1 gap-2">
+              {heightUnit === 'cm' ? (
+                <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="decimal" aria-label="Height in centimetres" placeholder="Height" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
+              ) : (
+                <>
+                  <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="numeric" aria-label="Height in feet" placeholder="ft" value={heightFt} onChange={(e) => setHeightFt(e.target.value)} />
+                  <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="numeric" aria-label="Height, inches" placeholder="in" value={heightIn} onChange={(e) => setHeightIn(e.target.value)} />
+                </>
+              )}
+              <SegToggle ariaLabel="Height unit" value={heightUnit} options={HEIGHT_UNITS} onChange={setHeightUnit} />
+            </div>
+            <div className="flex min-w-0 flex-1 gap-2">
+              <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="decimal" aria-label="Weight" placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} />
+              <SegToggle ariaLabel="Weight unit" value={weightUnit} options={WEIGHT_UNITS} onChange={setWeightUnit} />
+            </div>
+          </div>
+          <span className="pl-1 text-[14px]" style={{ color: '#9a9a9a' }}>We’ll email your report here. Height &amp; weight help tailor your analysis; phone is optional.</span>
           <label className="flex cursor-pointer items-start gap-3 pl-1 pt-1">
             <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-6 w-6 flex-none" style={{ accentColor: 'var(--brand-primary)' }} />
             <span className="text-[15px] leading-[1.45]" style={{ color: '#686868' }}>
@@ -454,13 +646,66 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (n: string,
         >
           {busy ? 'Setting up…' : 'Start  →'}
         </button>
+        </div>
+        <div className="px-6 pb-[30px] pt-[22px] sm:px-10 lg:px-12 xl:px-16 2xl:px-[90px]">
+          <span className="text-[13px]" style={{ color: '#9a9a9a' }}>
+            By continuing you agree to Movaia’s terms &amp; privacy policy. Your data is never shared with other customers.
+          </span>
+        </div>
       </div>
-      <div className="px-[90px] pb-[30px] pt-[22px]">
-        <span className="text-[13px]" style={{ color: '#9a9a9a' }}>
-          By continuing you agree to Movaia’s terms &amp; privacy policy. Your data is never shared with other customers.
-        </span>
+
+      {/* Right: brand hero — mirrors the Movaia login's right panel. Full-bleed
+          photo with a dark bottom gradient, then the tagline + feature list
+          anchored to the bottom. Desktop/tablet only; below `lg` it's hidden
+          and the form takes the full width, so nothing is lost on phones. */}
+      <div
+        className="relative hidden flex-col justify-end lg:flex lg:flex-1"
+        style={{
+          backgroundImage: `url('${WELCOME_IMAGE}')`,
+          backgroundSize: 'cover',
+          // Landscape source in a portrait panel: bias the crop toward the
+          // runner (right-of-centre) so she stays framed.
+          backgroundPosition: '66% center',
+          backgroundColor: '#1b2430', // fallback tone while the photo loads
+        }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.55) 60%, rgba(0,0,0,0.75) 100%)',
+          }}
+        />
+
+        <div className="relative z-10 p-12 pb-14">
+          <h3 className="mb-4 text-5xl font-extrabold leading-tight">
+            <span style={{ color: 'var(--brand-primary)' }}>Master your mechanics.</span>
+            <br />
+            <span className="text-white">Run better.</span>
+          </h3>
+          <p className="mb-8 max-w-sm text-base text-white/80">
+            Get AI-powered insights to improve your performance and prevent injuries.
+          </p>
+
+          <div className="space-y-5">
+            {HERO_FEATURES.map((f) => (
+              <div key={f.title} className="flex items-start gap-4">
+                <div
+                  className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl"
+                  style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)' }}
+                >
+                  {f.icon}
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-white">{f.title}</h4>
+                  <p className="mt-0.5 text-xs text-white/80">{f.body}</p>
+                </div>  
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-    </Screen>
+    </div>
   );
 }
 

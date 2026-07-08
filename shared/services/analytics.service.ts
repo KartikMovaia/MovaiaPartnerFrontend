@@ -1,5 +1,4 @@
-// Analytics — real API. Partner-staff endpoints are scoped server-side (an
-// OUTLET_ADMIN only ever sees their store); the admin endpoints are Movaia-only.
+// Analytics — partner-scoped dashboard stats + Movaia-staff cross-partner views.
 import { api } from './api.service';
 
 export type ScanStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
@@ -19,8 +18,7 @@ export interface AnalyticsOverview {
   trend: TrendPoint[];
 }
 
-// One scan row. Customer contact is PII — only ever returned within the
-// caller's scope by the backend.
+// One scan row. Customer contact is PII.
 export interface ScanRow {
   id: string;
   storeId: string | null;
@@ -41,7 +39,7 @@ export interface ScanPage {
 }
 
 // Partner-staff analytics (PARTNER_ADMIN sees the whole partner; OUTLET_ADMIN is
-// auto-scoped to their store by the backend).
+// scoped to their store server-side).
 export const analyticsService = {
   async overview(): Promise<AnalyticsOverview> {
     const { data } = await api.get('/analytics/overview');

@@ -97,7 +97,7 @@ function PartnerView({ data, scans, slug }: { data: AnalyticsOverview | null; sc
         <StatCard label="Total scans" value={fmtNum(total)} sub={`${fmtNum(last30)} in last 30d`} />
         <StatCard label="Reports sent" value={fmtNum(reports)} sub={`${delivery}% delivery`} />
         <StatCard label="Active outlets" value={String(activeOutlets)} sub="with scans" />
-        <StatCard label="Avg / week" value={String(perWeek)} sub="last 30 days" tone="dark" />
+        <StatCard label="Avg / week" value={String(perWeek)} sub="last 30 days" />
       </div>
 
       {/* Charts */}

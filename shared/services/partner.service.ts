@@ -1,10 +1,8 @@
-// Partner + store/outlet-admin management — real API (reads Phase 2, writes Phase 3).
+// Partner + store/outlet-admin management (Movaia-staff and partner-admin).
 import { api } from './api.service';
 import { PartnerRow } from './analytics.service';
 
-// A branch as the management UI needs it: identity + activity + its outlet admin
-// (with the admin's id so the row can manage it). Composed from /stores,
-// /analytics/overview (scan counts), and /stores/admins.
+// A branch as the management UI needs it: identity + activity + its outlet admin.
 export interface Store {
   id: string;
   name: string;
@@ -25,15 +23,12 @@ export interface OutletAdmin {
 
 // Movaia-staff-only partner management.
 export const partnerService = {
-  // Driven by the clean admin-analytics list (exact PartnerRow incl. last30Days;
-  // never exposes the per-partner webhookSecret).
   async list(): Promise<PartnerRow[]> {
     const { data } = await api.get('/admin-analytics/partners');
     return data.partners as PartnerRow[];
   },
-  // Management detail (stores + partnerUsers + branding); webhookSecret is
-  // stripped server-side.
-  async get(id: string) {
+  // The partner with its stores, partnerUsers, and branding (secrets stripped server-side).
+  async get(id: string): Promise<any> {
     const { data } = await api.get(`/partners/${id}`);
     return data.partner;
   },
@@ -51,8 +46,6 @@ export const partnerService = {
   async reactivate(id: string): Promise<void> {
     await api.post(`/partners/${id}/reactivate`);
   },
-  // Throws (409) if the partner still has branches/scan history — the caller
-  // surfaces that message.
   async remove(id: string): Promise<void> {
     await api.delete(`/partners/${id}`);
   },
@@ -68,9 +61,8 @@ export const partnerService = {
 };
 
 export const storeService = {
-  // Compose the branches view from the real endpoints: identity/active from
-  // /stores, per-store scan counts from the analytics overview, and each
-  // branch's outlet admin (with id) from /stores/admins.
+  // Compose the branches view: identity/active from /stores, per-store scan counts
+  // from the analytics overview, and each branch's outlet admin from /stores/admins.
   async list(): Promise<Store[]> {
     const [storesRes, adminsRes, overviewRes] = await Promise.all([
       api.get('/stores'),

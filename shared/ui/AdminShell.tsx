@@ -1,6 +1,6 @@
-// Sidebar dashboard shell shared by the partner and Movaia admin surfaces.
-//   variant="partner" → light sidebar, Movaia dark logo (partner-owned chrome).
-//   variant="movaia"  → dark sidebar, white logo (internal domain signal).
+// Sidebar dashboard shell shared by the partner and Movaia admin surfaces. Both
+// use the same light chrome (white sidebar, Movaia logo, green accents). `variant`
+// is accepted for API compatibility but currently doesn't change the styling.
 import { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
@@ -20,7 +20,6 @@ export interface ShellUser {
 }
 
 export default function AdminShell({
-  variant,
   nav,
   user,
   onSignOut,
@@ -32,24 +31,20 @@ export default function AdminShell({
   onSignOut?: () => void;
   children: ReactNode;
 }) {
-  const dark = variant === 'movaia';
   const logo = '/assets/movaia-logo.png';
 
   return (
-    <div className="flex min-h-screen" style={{ background: dark ? '#141414' : '#fff' }}>
+    <div className="flex min-h-screen" style={{ background: '#fff' }}>
       {/* Sidebar */}
       <aside
         className="flex w-56 flex-none flex-col gap-1 p-4 pt-[22px]"
-        style={{
-          background: dark ? '#141414' : '#fff',
-          borderRight: dark ? 'none' : '1px solid #ececec',
-        }}
+        style={{ background: '#fff', borderRight: '1px solid #ececec' }}
       >
         <img src={logo} alt="Movaia" style={{ height: 20 }} className="mb-5 ml-1.5 mt-0.5 self-start" />
         {nav.map((item, i) => {
           const body = (
             <>
-              {item.active && !dark && (
+              {item.active && (
                 <span className="absolute bottom-2 left-0 top-2 w-[3px] rounded-sm" style={{ background: '#ABD037' }} />
               )}
               <span className="text-base leading-none">{item.icon}</span>
@@ -58,10 +53,8 @@ export default function AdminShell({
           );
           const cls = 'relative flex items-center gap-[11px] rounded-[10px] px-[14px] py-[11px] text-sm';
           const style: React.CSSProperties = item.active
-            ? dark
-              ? { background: 'rgba(171,208,55,.16)', color: '#ABD037', fontWeight: 700 }
-              : { background: '#f2f7e3', color: '#5a7d16', fontWeight: 700 }
-            : { color: dark ? 'rgba(255,255,255,.6)' : '#686868', fontWeight: 500 };
+            ? { background: '#f2f7e3', color: '#5a7d16', fontWeight: 700 }
+            : { color: '#686868', fontWeight: 500 };
 
           return item.to ? (
             <Link key={i} to={item.to} className={cls} style={style}>
@@ -77,15 +70,12 @@ export default function AdminShell({
         <div className="flex-1" />
 
         {/* User block */}
-        <div
-          className="mt-2.5 flex items-center gap-2.5 p-2.5"
-          style={{ borderTop: dark ? '1px solid #2a2a2a' : '1px solid #f0f0f0' }}
-        >
+        <div className="mt-2.5 flex items-center gap-2.5 p-2.5" style={{ borderTop: '1px solid #f0f0f0' }}>
           <div className="flex min-w-0 flex-1 flex-col">
-            <b className="truncate text-[13px]" style={{ color: dark ? '#fff' : '#000' }}>
+            <b className="truncate text-[13px]" style={{ color: '#000' }}>
               {user.name}
             </b>
-            <span className="truncate text-[11px]" style={{ color: dark ? 'rgba(255,255,255,.45)' : '#9a9a9a' }}>
+            <span className="truncate text-[11px]" style={{ color: '#9a9a9a' }}>
               {user.role}
             </span>
           </div>
@@ -96,8 +86,8 @@ export default function AdminShell({
               title="Sign out"
               aria-label="Sign out"
               className="flex h-8 w-8 flex-none items-center justify-center rounded-[8px] transition-colors"
-            style={{ color: dark ? 'rgba(255,255,255,.55)' : '#9a9a9a' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = dark ? 'rgba(255,255,255,.08)' : '#f2f2f2')}
+              style={{ color: '#9a9a9a' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = '#f2f2f2')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
               <LogOut size={16} />

@@ -25,9 +25,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    // The httpOnly cookie isn't readable here, so always probe /me. If the
-    // access token expired, the axios layer silently refreshes; only a truly
-    // signed-out user falls through to staff=null.
+    // Probe the backend for the signed-in staff. While the backend is removed
+    // this rejects, so we fall through to staff=null (treated as signed out).
     try {
       setStaff(await partnerAuthService.me());
     } catch {

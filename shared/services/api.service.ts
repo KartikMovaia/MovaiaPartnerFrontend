@@ -1,41 +1,49 @@
-// Central axios instance. Auth is carried by an httpOnly cookie the browser
-// sends automatically (see docs/contract-audit.md §4.2) — page JS never touches
-// the token. We only (a) send credentials, (b) echo the readable CSRF cookie in
-// a header on state-changing requests, and (c) transparently refresh once on 401.
+// Shared HTTP client for the partners API. Bearer-token auth (no cookies/CSRF):
+// the access + refresh tokens live in localStorage; the access token is attached
+// to every request, and a 401 triggers a single refresh + replay.
 import axios, { AxiosRequestConfig } from 'axios';
 
-export const api = axios.create({
-  // Defaults to a same-origin path so the auth cookie is first-party; the Vite
-  // dev proxy forwards /api → the backend. Override with VITE_API_URL only if
-  // you deliberately run cross-origin (then the cookie needs SameSite=None).
-  baseURL: import.meta.env.VITE_API_URL || '/api',
-  headers: { 'Content-Type': 'application/json' },
-  withCredentials: true,
-});
+const ACCESS = 'mv_access';
+const REFRESH = 'mv_refresh';
+const DEVICE = 'mv_device';
 
-// The CSRF token lives in a readable (non-httpOnly) cookie; mirror it into the
-// X-CSRF-Token header so the backend's double-submit check passes.
-function readCsrfCookie(): string | null {
-  const m = document.cookie.match(/(?:^|;\s*)mv_csrf=([^;]+)/);
-  return m ? decodeURIComponent(m[1]) : null;
-}
+// Staff tokens (partner admins + Movaia staff).
+export const tokens = {
+  access: () => localStorage.getItem(ACCESS),
+  refresh: () => localStorage.getItem(REFRESH),
+  set: (accessToken: string, refreshToken: string) => {
+    localStorage.setItem(ACCESS, accessToken);
+    localStorage.setItem(REFRESH, refreshToken);
+  },
+  clear: () => {
+    localStorage.removeItem(ACCESS);
+    localStorage.removeItem(REFRESH);
+  },
+};
 
-const SAFE = new Set(['get', 'head', 'options']);
+// Kiosk device token (separate credential; bound iPad). No refresh — a 401 sends
+// the kiosk back to the setup screen.
+export const deviceToken = {
+  get: () => localStorage.getItem(DEVICE),
+  set: (t: string) => localStorage.setItem(DEVICE, t),
+  clear: () => localStorage.removeItem(DEVICE),
+};
+
+const baseURL = import.meta.env.VITE_API_URL || '/api';
+
+export const api = axios.create({ baseURL, headers: { 'Content-Type': 'application/json' } });
 
 api.interceptors.request.use((config) => {
-  if (!SAFE.has((config.method || 'get').toLowerCase())) {
-    const csrf = readCsrfCookie();
-    if (csrf) config.headers['X-CSRF-Token'] = csrf;
-  }
+  const t = tokens.access();
+  if (t) config.headers.Authorization = `Bearer ${t}`;
   return config;
 });
 
-// Single-flight refresh: on the first 401, try to rotate the access token from
-// the refresh cookie, then replay the original request once. Auth endpoints are
-// excluded so a failed login/refresh can't recurse.
-let refreshing: Promise<unknown> | null = null;
-
-function isAuthEndpoint(url = ''): boolean {
+// Single-flight refresh: the first 401 rotates the tokens via /refresh, then the
+// original request is replayed once. Auth endpoints are excluded so a bad
+// login/refresh can't recurse.
+let refreshing: Promise<string> | null = null;
+function isAuthPath(url = ''): boolean {
   return /\/partner-auth\/(login|staff-login|refresh)$/.test(url);
 }
 
@@ -43,16 +51,36 @@ api.interceptors.response.use(
   (res) => res,
   async (err) => {
     const original = err.config as (AxiosRequestConfig & { _retried?: boolean }) | undefined;
-    if (err.response?.status === 401 && original && !original._retried && !isAuthEndpoint(original.url)) {
+    const rt = tokens.refresh();
+    if (err.response?.status === 401 && original && !original._retried && !isAuthPath(original.url) && rt) {
       original._retried = true;
       try {
-        refreshing = refreshing || api.post('/partner-auth/refresh').finally(() => (refreshing = null));
-        await refreshing;
-        return api(original); // replay with the freshly-issued cookies
+        refreshing =
+          refreshing ||
+          api
+            .post('/partner-auth/refresh', { refreshToken: rt })
+            .then((res) => {
+              tokens.set(res.data.accessToken, res.data.refreshToken);
+              return res.data.accessToken as string;
+            })
+            .finally(() => {
+              refreshing = null;
+            });
+        const newAccess = await refreshing;
+        original.headers = { ...original.headers, Authorization: `Bearer ${newAccess}` };
+        return api(original); // replay with the fresh token
       } catch {
-        // refresh failed — fall through and let route guards redirect to login
+        tokens.clear(); // refresh failed — route guards will redirect to login
       }
     }
     return Promise.reject(err);
   }
 );
+
+// Kiosk client — attaches the device token instead of the staff token.
+export const kioskApi = axios.create({ baseURL, headers: { 'Content-Type': 'application/json' } });
+kioskApi.interceptors.request.use((config) => {
+  const t = deviceToken.get();
+  if (t) config.headers.Authorization = `Bearer ${t}`;
+  return config;
+});
