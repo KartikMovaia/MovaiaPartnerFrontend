@@ -1,6 +1,7 @@
 // Shared staff sign-in. `kind` picks the audience-specific chrome:
-//   PARTNER → green split-screen (partner portal, design 431–456)
-//   MOVAIA  → dark centered card with 2FA (internal staff, design 699–716)
+//   PARTNER → white split-screen (partner portal, brand panel + form)
+//   MOVAIA  → white centered card with 2FA (internal staff)
+// Both surfaces are white (#FFFFFF); brand identity is carried by the green accent.
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@shared/contexts/AuthContext';
@@ -43,48 +44,53 @@ export default function StaffLogin({
     return (
       <div
         className="relative flex min-h-screen items-center justify-center p-4"
-        style={{ background: 'linear-gradient(150deg,#0f0f0f,#232323)' }}
+        style={{ background: '#FFFFFF' }}
       >
         <div
           className="pointer-events-none absolute inset-0"
           style={{
-            backgroundImage: 'radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px)',
+            backgroundImage: 'radial-gradient(rgba(0,0,0,.035) 1px,transparent 1px)',
             backgroundSize: '24px 24px',
           }}
         />
         <form
           onSubmit={submit}
           className="relative flex w-full max-w-[400px] flex-col gap-[18px] p-[38px]"
-          style={{ background: '#1c1c1c', border: '1px solid #2e2e2e', borderRadius: 20 }}
+          style={{
+            background: '#fff',
+            border: '1px solid #ececec',
+            borderRadius: 20,
+            boxShadow: '0 20px 40px -24px rgba(0,0,0,.25)',
+          }}
         >
           <img src="/assets/movaia-logo.png" alt="Movaia" style={{ height: 24 }} className="self-start" />
           <div className="flex flex-col gap-1.5">
             <span
               className="self-start rounded-full px-[11px] py-[5px] text-[11px] font-bold tracking-[.5px]"
-              style={{ background: 'rgba(171,208,55,.16)', color: '#ABD037' }}
+              style={{ background: 'rgba(171,208,55,.18)', color: '#5f7d16' }}
             >
               ● INTERNAL — STAFF ONLY
             </span>
-            <h1 className="mt-1.5 text-2xl font-extrabold tracking-[-.5px] text-white">Sign in to admin</h1>
+            <h1 className="mt-1.5 text-2xl font-extrabold tracking-[-.5px]" style={{ color: '#141414' }}>
+              Sign in to admin
+            </h1>
           </div>
 
           <Field
             label="Movaia email"
-            dark
             type="email"
             value={email}
             onChange={setEmail}
           />
           <Field
             label="Password"
-            dark
             focused
             type="password"
             value={password}
             onChange={setPassword}
           />
 
-          {error && <p className="text-[13px] text-red-400">{error}</p>}
+          {error && <p className="text-[13px] text-red-600">{error}</p>}
 
           <button
             type="submit"
@@ -92,11 +98,8 @@ export default function StaffLogin({
             className="h-[52px] rounded-[11px] text-[15px] font-bold disabled:opacity-60"
             style={{ background: '#ABD037', color: '#1c2b00' }}
           >
-            {busy ? 'Signing in…' : 'Continue with 2FA'}
+            {busy ? 'Signing in…' : 'Sign in'}
           </button>
-          <span className="text-center text-[11px]" style={{ color: 'rgba(255,255,255,.4)' }}>
-            Protected by SSO · all access is logged
-          </span>
         </form>
       </div>
     );
@@ -108,23 +111,23 @@ export default function StaffLogin({
       {/* Brand panel */}
       <div
         className="flex flex-col justify-between p-11 md:flex-1"
-        style={{ background: 'linear-gradient(150deg,#141414,#2a2a2a)' }}
+        style={{ background: '#FFFFFF', borderRight: '1px solid #ececec' }}
       >
         <img src="/assets/movaia-logo.png" alt="Movaia" style={{ height: 26 }} className="self-start" />
         <div className="flex flex-col gap-3.5 py-10">
-          <span className="font-accent text-[13px] font-semibold uppercase tracking-[3px]" style={{ color: '#ABD037' }}>
+          <span className="font-accent text-[13px] font-semibold uppercase tracking-[3px]" style={{ color: '#7a9e1f' }}>
             Partner portal
           </span>
-          <h2 className="text-[34px] font-extrabold leading-[1.15] tracking-[-.6px] text-white">
+          <h2 className="text-[34px] font-extrabold leading-[1.15] tracking-[-.6px]" style={{ color: '#141414' }}>
             Run analysis,
             <br />
             across every branch.
           </h2>
-          <p className="max-w-[340px] text-[15px] leading-[1.6]" style={{ color: 'rgba(255,255,255,.6)' }}>
+          <p className="max-w-[340px] text-[15px] leading-[1.6]" style={{ color: '#686868' }}>
             Track scans, send reports, and white-label the kiosk for your clubs.
           </p>
         </div>
-        <span className="text-xs" style={{ color: 'rgba(255,255,255,.4)' }}>
+        <span className="text-xs" style={{ color: '#9a9a9a' }}>
           © 2026 Movaia
         </span>
       </div>
