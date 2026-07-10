@@ -1,8 +1,9 @@
 // Partner analytics dashboard. Shared by PARTNER_ADMIN and OUTLET_ADMIN — the
 // services scope every query, so an outlet admin automatically sees only their
 // branch. The UI adapts: outlet admins get a teal single-branch banner + three
-// KPIs (design 618–646); partner admins get the full overview with charts and
-// the cross-branch scans table (design 458–525).
+// KPIs; partner admins get the full overview with charts and the cross-branch
+// scans table. The KPIs + "analyses over time" chart are time-period configurable
+// (default: all time); the recent-scans table always shows the latest activity.
 import { useCallback, useEffect, useState } from 'react';
 import { LayoutGrid, Store, Palette } from 'lucide-react';
 import AdminShell, { NavItem, shellUserFromStaff } from '@shared/ui/AdminShell';
@@ -11,10 +12,12 @@ import StatusPill from '@shared/ui/StatusPill';
 import ReportFlag from '@shared/ui/ReportFlag';
 import AreaChart from '@shared/ui/AreaChart';
 import BarList from '@shared/ui/BarList';
+import DateRangePicker from '@shared/ui/DateRangePicker';
 import ErrorState from '@shared/components/ErrorState';
 import { fmtDateTime, fmtNum } from '@shared/ui/format';
 import { analyticsService, AnalyticsOverview, ScanRow } from '@shared/services/analytics.service';
 import { useAuth } from '@shared/contexts/AuthContext';
+import { DateRange, DEFAULT_RANGE, rangeLabel, rangeWeeks, toParams } from '@shared/utils/dateRange';
 
 function reportFlag(s: ScanRow): 'sent' | 'pending' | 'none' {
   if (s.emailSentAt) return 'sent';
@@ -26,22 +29,32 @@ export default function AnalyticsDashboard() {
   const { staff, logout } = useAuth();
   const isOutlet = staff?.role === 'OUTLET_ADMIN';
 
+  const [range, setRange] = useState<DateRange>(DEFAULT_RANGE);
   const [data, setData] = useState<AnalyticsOverview | null>(null);
   const [scans, setScans] = useState<ScanRow[] | null>(null);
   const [error, setError] = useState(false);
 
-  const load = useCallback(() => {
+  // Range-aware overview: reloads whenever the selected period changes.
+  const loadOverview = useCallback(() => {
     setError(false);
-    Promise.all([analyticsService.overview(), analyticsService.scans({ pageSize: 50 })])
-      .then(([overview, page]) => {
-        setData(overview);
-        setScans(page.items);
-      })
-      .catch(() => setError(true));
+    analyticsService.overview(toParams(range)).then(setData).catch(() => setError(true));
+  }, [range]);
+  useEffect(() => {
+    loadOverview();
+  }, [loadOverview]);
+
+  // Recent scans are always "recent" — fetched once, not filtered by the range.
+  const loadScans = useCallback(() => {
+    analyticsService.scans({ pageSize: 50 }).then((p) => setScans(p.items)).catch(() => setError(true));
   }, []);
   useEffect(() => {
-    load();
-  }, [load]);
+    loadScans();
+  }, [loadScans]);
+
+  const retry = () => {
+    loadOverview();
+    loadScans();
+  };
 
   const nav: NavItem[] = isOutlet
     ? [{ icon: <LayoutGrid size={16} />, label: 'Dashboard', to: '/partner', active: true }]
@@ -54,50 +67,65 @@ export default function AnalyticsDashboard() {
   return (
     <AdminShell variant="partner" nav={nav} user={shellUserFromStaff(staff)} onSignOut={logout}>
       {error ? (
-        <ErrorState message="Couldn’t load your dashboard." onRetry={load} />
+        <ErrorState message="Couldn’t load your dashboard." onRetry={retry} />
       ) : isOutlet ? (
-        <OutletView data={data} scans={scans} storeName={staff?.storeName ?? 'Your branch'} />
+        <OutletView data={data} scans={scans} storeName={staff?.storeName ?? 'Your branch'} range={range} onRangeChange={setRange} />
       ) : (
-        <PartnerView data={data} scans={scans} slug={staff?.partnerSlug} />
+        <PartnerView data={data} scans={scans} slug={staff?.partnerSlug} range={range} onRangeChange={setRange} />
       )}
     </AdminShell>
   );
 }
 
 /* ── Partner admin (all branches) ─────────────────────────────────────────── */
-function PartnerView({ data, scans, slug }: { data: AnalyticsOverview | null; scans: ScanRow[] | null; slug?: string }) {
+function PartnerView({
+  data,
+  scans,
+  slug,
+  range,
+  onRangeChange,
+}: {
+  data: AnalyticsOverview | null;
+  scans: ScanRow[] | null;
+  slug?: string;
+  range: DateRange;
+  onRangeChange: (r: DateRange) => void;
+}) {
   const byStore = (data?.byStore ?? []).filter((s) => s.storeId);
   const topOutlets = [...byStore].sort((a, b) => b.scans - a.scans).slice(0, 5);
   const activeOutlets = byStore.length;
-  const total = data?.totals.allTime ?? 0;
-  const last30 = data?.totals.last30Days ?? 0;
+  const total = data?.totals.scans ?? 0;
   const reports = data?.totals.reportsSent ?? 0;
   const delivery = total ? ((reports / total) * 100).toFixed(1) : '0.0';
-  const perWeek = Math.round((last30 * 7) / 30); // avg scans/week over last 30 days
+  const perWeek = Math.round(total / rangeWeeks(range, data?.windowDays ?? 1));
   const trend = data?.trend ?? [];
+  const label = rangeLabel(range);
 
   return (
     <>
       {/* Header */}
-      <div>
-        <h1 className="mb-1 text-2xl font-extrabold tracking-[-.4px]">Overview</h1>
-        <p className="text-[13px]" style={{ color: '#686868' }}>
-          {activeOutlets} active outlets · updated just now
-          {slug && (
-            <>
-              {' · '}
-              <span className="font-mono">{slug}</span>
-            </>
-          )}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3.5">
+        <div>
+          <h1 className="mb-1 text-2xl font-extrabold tracking-[-.4px]">Overview</h1>
+          <p className="text-[13px]" style={{ color: '#686868' }}>
+            {activeOutlets} active outlets · updated just now
+            {slug && (
+              <>
+                {' · '}
+                <span className="font-mono">{slug}</span>
+              </>
+            )}
+          </p>
+        </div>
+        <DateRangePicker value={range} onChange={onRangeChange} />
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total scans" value={fmtNum(total)} sub={`${fmtNum(last30)} in last 30d`} />
+        <StatCard label="Total analyses" value={fmtNum(total)} sub={label} />
         <StatCard label="Reports sent" value={fmtNum(reports)} sub={`${delivery}% delivery`} />
         <StatCard label="Active outlets" value={String(activeOutlets)} sub="with scans" />
-        <StatCard label="Avg / week" value={String(perWeek)} sub="last 30 days" />
+        <StatCard label="Avg / week" value={String(perWeek)} sub={label} />
       </div>
 
       {/* Charts */}
@@ -106,10 +134,10 @@ function PartnerView({ data, scans, slug }: { data: AnalyticsOverview | null; sc
           <div className="flex items-center justify-between">
             <b className="text-[15px]">Analyses over time</b>
             <span className="text-xs" style={{ color: '#686868' }}>
-              last 8 weeks
+              {label}
             </span>
           </div>
-          <AreaChart id="pg" data={trend.map((t) => t.scans)} labels={trend.map((t) => t.label)} xTitle="Week" />
+          <AreaChart id="pg" data={trend.map((t) => t.scans)} labels={trend.map((t) => t.label)} xTitle="Period" />
         </Card>
         <Card>
           <b className="text-[15px]">By outlet</b>
@@ -128,16 +156,20 @@ function OutletView({
   data,
   scans,
   storeName,
+  range,
+  onRangeChange,
 }: {
   data: AnalyticsOverview | null;
   scans: ScanRow[] | null;
   storeName: string;
+  range: DateRange;
+  onRangeChange: (r: DateRange) => void;
 }) {
-  const total = data?.totals.allTime ?? 0;
-  const last30 = data?.totals.last30Days ?? 0;
+  const total = data?.totals.scans ?? 0;
   const reports = data?.totals.reportsSent ?? 0;
   const delivery = total ? ((reports / total) * 100).toFixed(1) : '0.0';
-  const perWeek = Math.round((last30 * 7) / 30);
+  const perWeek = Math.round(total / rangeWeeks(range, data?.windowDays ?? 1));
+  const label = rangeLabel(range);
 
   return (
     <>
@@ -151,13 +183,16 @@ function OutletView({
       </div>
 
       {/* Header */}
-      <h1 className="text-[22px] font-extrabold tracking-[-.4px]">{storeName} overview</h1>
+      <div className="flex flex-wrap items-start justify-between gap-3.5">
+        <h1 className="text-[22px] font-extrabold tracking-[-.4px]">{storeName} overview</h1>
+        <DateRangePicker value={range} onChange={onRangeChange} />
+      </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
-        <StatCard label="Total scans" value={fmtNum(total)} sub={`${fmtNum(last30)} in last 30d`} />
+        <StatCard label="Total analyses" value={fmtNum(total)} sub={label} />
         <StatCard label="Reports sent" value={fmtNum(reports)} sub={`${delivery}%`} />
-        <StatCard label="Avg / week" value={String(perWeek)} sub="last 30 days" />
+        <StatCard label="Avg / week" value={String(perWeek)} sub={label} />
       </div>
 
       {/* Recent scans (scoped) */}

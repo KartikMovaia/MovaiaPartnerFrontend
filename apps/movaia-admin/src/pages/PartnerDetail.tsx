@@ -2,7 +2,7 @@
 // Design reference: "Movaia Gyms & Clubs.dc.html" lines 778–808.
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { LayoutGrid, Users } from 'lucide-react';
+import { LayoutGrid, Users, CreditCard } from 'lucide-react';
 import AdminShell, { NavItem, shellUserFromStaff } from '@shared/ui/AdminShell';
 import { useAuth } from '@shared/contexts/AuthContext';
 import { useToast } from '@shared/ui/Toast';
@@ -117,6 +117,7 @@ export default function PartnerDetail() {
   const nav: NavItem[] = [
     { icon: <LayoutGrid size={16} />, label: 'Dashboard', to: '/admin' },
     { icon: <Users size={16} />, label: 'Partners', to: '/admin/partners', active: true },
+    { icon: <CreditCard size={16} />, label: 'Billing', to: '/admin/billing' },
   ];
 
   return (

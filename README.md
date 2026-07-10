@@ -25,6 +25,8 @@ That's it — the Vite dev server **proxies `/api` to the backend on :4000**, so
 
 First-time end-to-end: create a platform admin in the backend, then sign in at `/admin/login`, create a partner + its admin, sign in at `/partner/login`, and open `/kiosk/<slug>`.
 
+**Demo data (fastest path):** run `npm run script:seed-demo` in `../backend` to populate ~10 partners with ~6 months of activity (great for the date-range KPIs, top-partners, status filter, and billing). Sign into `/partner` with **`demo@movaia.com`** / **`outlet@movaia.com`** (password `Movaia@2026!`), and `/admin` with your platform admin. Note: the kiosk needs the partner linked to Movaia (the seed prints the `link-movaia` command).
+
 ---
 
 ## Scripts

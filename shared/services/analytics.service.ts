@@ -9,10 +9,19 @@ export interface TrendPoint {
   scans: number;
 }
 
+// A resolved date window (null/null = all-time). Sent as ?from&to query params.
+export interface RangeParams {
+  from?: string;
+  to?: string;
+}
+
 export interface AnalyticsOverview {
   // storeId is set when the caller is an OUTLET_ADMIN (scoped to one store).
   scope: { partnerId: string; storeId: string | null };
-  totals: { allTime: number; last30Days: number; reportsSent: number };
+  // Echo of the applied window; windowDays spans the totals for a range-correct avg/week.
+  range: { from: string | null; to: string | null };
+  windowDays: number;
+  totals: { scans: number; reportsSent: number };
   funnel: { pending: number; processing: number; completed: number; failed: number };
   byStore: Array<{ storeId: string | null; storeName: string | null; scans: number }>;
   trend: TrendPoint[];
@@ -41,8 +50,8 @@ export interface ScanPage {
 // Partner-staff analytics (PARTNER_ADMIN sees the whole partner; OUTLET_ADMIN is
 // scoped to their store server-side).
 export const analyticsService = {
-  async overview(): Promise<AnalyticsOverview> {
-    const { data } = await api.get('/analytics/overview');
+  async overview(range: RangeParams = {}): Promise<AnalyticsOverview> {
+    const { data } = await api.get('/analytics/overview', { params: range });
     return data as AnalyticsOverview;
   },
   async scans(
@@ -60,12 +69,14 @@ export interface PartnerRow {
   slug: string;
   status: string;
   storeCount: number;
-  scanCount: number;
+  scanCount: number; // scoped to the requested range (all-time when unbounded)
+  reportsSent?: number;
   last30Days: number;
 }
 
 export interface PartnersOverview {
-  totals: { partners: number; scans: number; last30Days: number };
+  range: { from: string | null; to: string | null };
+  totals: { partners: number; activePartners: number; scans: number; reportsSent: number; last30Days: number };
   partners: PartnerRow[];
   trend: TrendPoint[];
 }
@@ -79,8 +90,8 @@ export interface PartnerAnalyticsDetail {
 }
 
 export const adminAnalyticsService = {
-  async partnersOverview(): Promise<PartnersOverview> {
-    const { data } = await api.get('/admin-analytics/partners');
+  async partnersOverview(range: RangeParams = {}): Promise<PartnersOverview> {
+    const { data } = await api.get('/admin-analytics/partners', { params: range });
     return data as PartnersOverview;
   },
   async partnerDetail(id: string): Promise<PartnerAnalyticsDetail> {

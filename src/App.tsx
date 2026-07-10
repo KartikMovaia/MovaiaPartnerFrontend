@@ -17,6 +17,7 @@ const SetPassword = lazyWithRetry(() => import('@apps/partner-admin/src/pages/Se
 const MovaiaDashboard = lazyWithRetry(() => import('@apps/movaia-admin/src/pages/MovaiaDashboard'));
 const PartnerList = lazyWithRetry(() => import('@apps/movaia-admin/src/pages/PartnerList'));
 const PartnerDetail = lazyWithRetry(() => import('@apps/movaia-admin/src/pages/PartnerDetail'));
+const Billing = lazyWithRetry(() => import('@apps/movaia-admin/src/pages/Billing'));
 
 // Partner admin
 const BrandingSettings = lazyWithRetry(() => import('@apps/partner-admin/src/pages/BrandingSettings'));
@@ -76,6 +77,14 @@ export default function App() {
           element={
             <ProtectedRoute kind="MOVAIA" loginPath="/admin/login">
               <PartnerDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/billing"
+          element={
+            <ProtectedRoute kind="MOVAIA" loginPath="/admin/login">
+              <Billing />
             </ProtectedRoute>
           }
         />

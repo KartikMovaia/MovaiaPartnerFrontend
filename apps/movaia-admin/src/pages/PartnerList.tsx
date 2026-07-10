@@ -1,8 +1,8 @@
 // Movaia internal — Manage partners (add / remove).
 // Design reference: "Movaia Gyms & Clubs.dc.html" lines 810–831.
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutGrid, Users } from 'lucide-react';
+import { LayoutGrid, Users, CreditCard } from 'lucide-react';
 import AdminShell, { NavItem, shellUserFromStaff } from '@shared/ui/AdminShell';
 import { useAuth } from '@shared/contexts/AuthContext';
 import { useToast } from '@shared/ui/Toast';
@@ -18,6 +18,11 @@ import { PartnerRow } from '@shared/services/analytics.service';
 const slugify = (s: string) =>
   s.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
+type SortKey = 'name' | 'storeCount' | 'scanCount';
+type SortDir = 'asc' | 'desc';
+const STATUS_FILTERS = ['ALL', 'ACTIVE', 'SUSPENDED', 'PROVISIONING', 'ARCHIVED'] as const;
+type StatusFilter = (typeof STATUS_FILTERS)[number];
+
 export default function PartnerList() {
   const navigate = useNavigate();
   const { staff, logout } = useAuth();
@@ -32,6 +37,9 @@ export default function PartnerList() {
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
+  const [sortKey, setSortKey] = useState<SortKey>('name');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
 
   const load = useCallback(() => {
     setError(false);
@@ -44,7 +52,27 @@ export default function PartnerList() {
   const nav: NavItem[] = [
     { icon: <LayoutGrid size={16} />, label: 'Dashboard', to: '/admin' },
     { icon: <Users size={16} />, label: 'Partners', to: '/admin/partners', active: true },
+    { icon: <CreditCard size={16} />, label: 'Billing', to: '/admin/billing' },
   ];
+
+  const toggleSort = (key: SortKey) => {
+    if (key === sortKey) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortKey(key);
+      // Names read best A→Z; counts most-useful high→low.
+      setSortDir(key === 'name' ? 'asc' : 'desc');
+    }
+  };
+
+  // Client-side filter + sort — the roster is small and already fully loaded.
+  const visible = useMemo(() => {
+    const rows = (partners ?? []).filter((p) => statusFilter === 'ALL' || p.status === statusFilter);
+    const dir = sortDir === 'asc' ? 1 : -1;
+    return [...rows].sort((a, b) => {
+      if (sortKey === 'name') return dir * a.name.localeCompare(b.name);
+      return dir * (a[sortKey] - b[sortKey]);
+    });
+  }, [partners, statusFilter, sortKey, sortDir]);
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,7 +150,11 @@ export default function PartnerList() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="mb-1 text-[22px] font-extrabold tracking-[-.4px]">Partners</h1>
-              <p className="text-[13px] text-[#686868]">{partners.length} total</p>
+              <p className="text-[13px] text-[#686868]">
+                {statusFilter === 'ALL'
+                  ? `${partners.length} total`
+                  : `${visible.length} of ${partners.length}`}
+              </p>
             </div>
             <button
               type="button"
@@ -201,15 +233,38 @@ export default function PartnerList() {
             </form>
           )}
 
+          {/* Status filter */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {STATUS_FILTERS.map((s) => {
+              const active = statusFilter === s;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setStatusFilter(s)}
+                  className="h-8 rounded-[8px] border px-3 text-[12.5px] transition-colors"
+                  style={
+                    active
+                      ? { background: '#f2f7e3', color: '#5a7d16', borderColor: '#cfe08c', fontWeight: 700 }
+                      : { background: '#fff', color: '#686868', borderColor: '#e4e4e4', fontWeight: 600 }
+                  }
+                >
+                  {s === 'ALL' ? 'All' : s.charAt(0) + s.slice(1).toLowerCase()}
+                </button>
+              );
+            })}
+          </div>
+
           {/* Partners table */}
           <div className="overflow-hidden rounded-[14px] border border-[#ececec] bg-white">
-            <div className="grid grid-cols-[1.6fr_1fr_1fr_.6fr] border-b border-[#f0f0f0] bg-[#fafafa] px-5 py-[11px] text-[11px] font-bold uppercase tracking-[.5px] text-[#9a9a9a]">
-              <span>Partner</span>
-              <span>Outlets</span>
+            <div className="grid grid-cols-[1.6fr_1fr_1fr_1fr_.6fr] border-b border-[#f0f0f0] bg-[#fafafa] px-5 py-[11px] text-[11px] font-bold uppercase tracking-[.5px] text-[#9a9a9a]">
+              <SortHeader label="Partner" col="name" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+              <SortHeader label="Outlets" col="storeCount" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+              <SortHeader label="Analyses" col="scanCount" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
               <span>Status</span>
               <span />
             </div>
-            {partners.map((p, i) => (
+            {visible.map((p, i) => (
               <div
                 key={p.id}
                 role="button"
@@ -221,8 +276,8 @@ export default function PartnerList() {
                     navigate(`/admin/partners/${p.id}`);
                   }
                 }}
-                className={`grid cursor-pointer grid-cols-[1.6fr_1fr_1fr_.6fr] items-center px-5 py-3.5 text-[13px] outline-none transition-colors hover:bg-[#fafafa] focus-visible:bg-[#fafafa] ${
-                  i < partners.length - 1 ? 'border-b border-[#f5f5f5]' : ''
+                className={`grid cursor-pointer grid-cols-[1.6fr_1fr_1fr_1fr_.6fr] items-center px-5 py-3.5 text-[13px] outline-none transition-colors hover:bg-[#fafafa] focus-visible:bg-[#fafafa] ${
+                  i < visible.length - 1 ? 'border-b border-[#f5f5f5]' : ''
                 }`}
               >
                 <div className="flex min-w-0 flex-col">
@@ -230,6 +285,7 @@ export default function PartnerList() {
                   <span className="truncate font-mono text-[11px] text-[#9a9a9a]">{p.slug}</span>
                 </div>
                 <span>{fmtNum(p.storeCount)}</span>
+                <span>{fmtNum(p.scanCount)}</span>
                 <span>
                   <StatusPill status={p.status} />
                 </span>
@@ -248,9 +304,41 @@ export default function PartnerList() {
             {partners.length === 0 && (
               <div className="px-5 py-8 text-center text-sm text-[#9a9a9a]">No partners yet.</div>
             )}
+            {partners.length > 0 && visible.length === 0 && (
+              <div className="px-5 py-8 text-center text-sm text-[#9a9a9a]">No partners match this filter.</div>
+            )}
           </div>
         </div>
       )}
     </AdminShell>
+  );
+}
+
+// A clickable column header that sorts the roster and shows the active direction.
+function SortHeader({
+  label,
+  col,
+  sortKey,
+  sortDir,
+  onSort,
+}: {
+  label: string;
+  col: SortKey;
+  sortKey: SortKey;
+  sortDir: SortDir;
+  onSort: (k: SortKey) => void;
+}) {
+  const active = sortKey === col;
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(col)}
+      className="flex items-center gap-1 text-left text-[11px] font-bold uppercase tracking-[.5px] outline-none"
+      style={{ color: active ? '#5a7d16' : '#9a9a9a' }}
+      aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+    >
+      <span>{label}</span>
+      <span aria-hidden style={{ opacity: active ? 1 : 0.35 }}>{active && sortDir === 'asc' ? '↑' : '↓'}</span>
+    </button>
   );
 }

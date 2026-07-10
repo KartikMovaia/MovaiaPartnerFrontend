@@ -18,6 +18,8 @@ partner/outlet (`/partner/*`), kiosk (`/kiosk/:slug`). Human docs: `README.md`.
 - Dev needs the backend on :4000 (the `/api` Vite proxy). Set `VITE_API_URL` to call a backend directly instead.
 - `AdminShell`'s `variant` prop is currently **vestigial** (both surfaces use the same light chrome).
 - Backend contract specifics already handled here: login/refresh return tokens in the body; `/public/branding/:slug` returns no `stores`; `deviceLogout` takes `{email,password}` (password-gated unbind).
+- **Dashboards are date-range configurable** — `shared/ui/DateRangePicker` + `shared/utils/dateRange`; `analyticsService.overview` / `adminAnalyticsService.partnersOverview` take `{from?,to?}`. KPIs + trend reflect the range (default **all time**); recent-scans tables are intentionally **not** range-filtered. Data fetches on mount + on range change only — no polling/focus refetch.
+- `PartnerList` sorts (name/outlets/analyses) + filters by status client-side. `Billing` (`/admin/billing`) is a **scaffold** — usage preview over `partnersOverview`; pricing not finalized (no persistence/invoices).
 
 ## Structure
-`apps/{kiosk,partner-admin,movaia-admin}/src/pages` · `shared/{services,ui,components,contexts,partners,utils}` · `src/{App.tsx,main.tsx}`.
+`apps/{kiosk,partner-admin,movaia-admin}/src/pages` (movaia-admin also has `Billing.tsx`) · `shared/{services,ui,components,contexts,partners,utils}` (`ui/DateRangePicker`, `utils/dateRange`) · `src/{App.tsx,main.tsx}`.
