@@ -1,7 +1,7 @@
 // Kiosk white-label editor with a live preview (design 532–598). Colors + logo
 // persist to the real branding API; publishing re-themes every outlet kiosk.
 import { useEffect, useRef, useState } from 'react';
-import { LayoutGrid, Store, Palette, Upload } from 'lucide-react';
+import { LayoutGrid, Store, Palette, Upload, ExternalLink, Copy, ScrollText } from 'lucide-react';
 import AdminShell, { NavItem, shellUserFromStaff } from '@shared/ui/AdminShell';
 import { useAuth } from '@shared/contexts/AuthContext';
 import { useToast } from '@shared/ui/Toast';
@@ -9,6 +9,7 @@ import { brandingService } from '@shared/services/branding.service';
 
 const NAV: NavItem[] = [
   { icon: <LayoutGrid size={16} />, label: 'Dashboard', to: '/partner' },
+  { icon: <ScrollText size={16} />, label: 'Scans', to: '/partner/scans' },
   { icon: <Store size={16} />, label: 'Branches', to: '/partner/stores' },
   { icon: <Palette size={16} />, label: 'Branding', to: '/partner/branding', active: true },
 ];
@@ -79,6 +80,17 @@ export default function BrandingSettings() {
   };
 
   const brandName = staff?.partnerName ?? 'Your brand';
+  const kioskUrl = staff?.partnerSlug ? `${window.location.origin}/kiosk/${staff.partnerSlug}` : null;
+
+  const copyKioskUrl = async () => {
+    if (!kioskUrl) return;
+    try {
+      await navigator.clipboard.writeText(kioskUrl);
+      toast('Kiosk URL copied.', 'success');
+    } catch {
+      toast('Couldn’t copy — select the link and copy it manually.', 'error');
+    }
+  };
 
   return (
     <AdminShell variant="partner" nav={NAV} user={shellUserFromStaff(staff)} onSignOut={logout}>
@@ -89,14 +101,27 @@ export default function BrandingSettings() {
           <p className="text-[13px]" style={{ color: '#686868' }}>
             Your colors &amp; logo — applied to every kiosk on publish.
           </p>
-          {staff?.partnerSlug && (
+          {kioskUrl && (
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-bold uppercase tracking-[.5px]" style={{ color: '#9a9a9a' }}>
                 Kiosk URL
               </span>
-              <code className="rounded-[7px] bg-[#f2f2f2] px-2 py-1 text-[12px] text-[#141414]">
-                {`${window.location.origin}/kiosk/${staff.partnerSlug}`} {/* double-check the URL in production */}
-              </code>
+              <a
+                href={kioskUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-[7px] bg-[#f2f2f2] px-2 py-1 text-[12px] text-[#141414] hover:bg-[#e9e9e9] hover:underline"
+              >
+                {kioskUrl}
+                <ExternalLink size={12} />
+              </a>
+              <button
+                type="button"
+                onClick={copyKioskUrl}
+                className="inline-flex items-center gap-1 rounded-[7px] border border-[#e4e4e4] bg-white px-2 py-1 text-[12px] text-[#686868] hover:bg-[#fafafa]"
+              >
+                <Copy size={12} /> Copy
+              </button>
             </div>
           )}
         </div>

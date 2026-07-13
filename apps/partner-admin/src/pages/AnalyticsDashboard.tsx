@@ -5,7 +5,8 @@
 // scans table. The KPIs + "analyses over time" chart are time-period configurable
 // (default: all time); the recent-scans table always shows the latest activity.
 import { useCallback, useEffect, useState } from 'react';
-import { LayoutGrid, Store, Palette } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { LayoutGrid, Store, Palette, ScrollText } from 'lucide-react';
 import AdminShell, { NavItem, shellUserFromStaff } from '@shared/ui/AdminShell';
 import StatCard from '@shared/ui/StatCard';
 import StatusPill from '@shared/ui/StatusPill';
@@ -57,9 +58,13 @@ export default function AnalyticsDashboard() {
   };
 
   const nav: NavItem[] = isOutlet
-    ? [{ icon: <LayoutGrid size={16} />, label: 'Dashboard', to: '/partner', active: true }]
+    ? [
+        { icon: <LayoutGrid size={16} />, label: 'Dashboard', to: '/partner', active: true },
+        { icon: <ScrollText size={16} />, label: 'Scans', to: '/partner/scans' },
+      ]
     : [
         { icon: <LayoutGrid size={16} />, label: 'Dashboard', to: '/partner', active: true },
+        { icon: <ScrollText size={16} />, label: 'Scans', to: '/partner/scans' },
         { icon: <Store size={16} />, label: 'Branches', to: '/partner/stores' },
         { icon: <Palette size={16} />, label: 'Branding', to: '/partner/branding' },
       ];
@@ -146,7 +151,7 @@ function PartnerView({
       </div>
 
       {/* Recent scans */}
-      <ScansTable scans={scans} showOutlet title="Recent scans" viewAll />
+      <ScansTable scans={scans} showOutlet title="Recent scans" viewAllTo="/partner/scans" />
     </>
   );
 }
@@ -196,7 +201,7 @@ function OutletView({
       </div>
 
       {/* Recent scans (scoped) */}
-      <ScansTable scans={scans} showOutlet={false} title={`Recent scans · ${storeName}`} />
+      <ScansTable scans={scans} showOutlet={false} title={`Recent scans · ${storeName}`} viewAllTo="/partner/scans" />
     </>
   );
 }
@@ -214,12 +219,12 @@ function ScansTable({
   scans,
   showOutlet,
   title,
-  viewAll = false,
+  viewAllTo,
 }: {
   scans: ScanRow[] | null;
   showOutlet: boolean;
   title: string;
-  viewAll?: boolean;
+  viewAllTo?: string;
 }) {
   const cols = showOutlet ? '1.1fr 1fr 1.6fr 1fr 1fr' : '1fr 1.8fr 1fr 1fr';
   const rows = scans ?? [];
@@ -227,10 +232,10 @@ function ScansTable({
     <div className="overflow-hidden rounded-[14px]" style={{ background: '#fff', border: '1px solid #ececec' }}>
       <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #f0f0f0' }}>
         <b className="text-[15px]">{title}</b>
-        {viewAll && (
-          <a href="#" className="text-xs font-semibold" style={{ color: '#7a9e1f' }}>
+        {viewAllTo && (
+          <Link to={viewAllTo} className="text-xs font-semibold" style={{ color: '#7a9e1f' }}>
             View all →
-          </a>
+          </Link>
         )}
       </div>
       <div className="overflow-x-auto">

@@ -55,7 +55,7 @@ export const analyticsService = {
     return data as AnalyticsOverview;
   },
   async scans(
-    params: { page?: number; pageSize?: number; storeId?: string; status?: ScanStatus } = {}
+    params: { page?: number; pageSize?: number; storeId?: string; status?: ScanStatus; from?: string; to?: string } = {}
   ): Promise<ScanPage> {
     const { data } = await api.get('/analytics/scans', { params });
     return data as ScanPage;

@@ -3,7 +3,7 @@
 // outlet admin (first name, last name, email); an existing unassigned branch can
 // be assigned inline. Each row toggles active/paused live via the mock service.
 import { useCallback, useEffect, useState } from 'react';
-import { LayoutGrid, Store, Palette } from 'lucide-react';
+import { LayoutGrid, Store, Palette, ScrollText } from 'lucide-react';
 import AdminShell, { NavItem, shellUserFromStaff } from '@shared/ui/AdminShell';
 import { useAuth } from '@shared/contexts/AuthContext';
 import { useToast } from '@shared/ui/Toast';
@@ -17,6 +17,7 @@ import { apiError } from '@shared/services/apiError';
 
 const NAV: NavItem[] = [
   { icon: <LayoutGrid size={16} />, label: 'Dashboard', to: '/partner' },
+  { icon: <ScrollText size={16} />, label: 'Scans', to: '/partner/scans' },
   { icon: <Store size={16} />, label: 'Branches', to: '/partner/stores', active: true },
   { icon: <Palette size={16} />, label: 'Branding', to: '/partner/branding' },
 ];

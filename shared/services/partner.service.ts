@@ -93,6 +93,13 @@ export const storeService = {
     }));
   },
 
+  // Lightweight branch list (id + name only) for filter dropdowns — one call,
+  // unlike list() which composes admins + scan counts for the management view.
+  async listBranches(): Promise<Array<{ id: string; name: string }>> {
+    const { data } = await api.get('/stores');
+    return (data.stores as Array<{ id: string; name: string }>).map((s) => ({ id: s.id, name: s.name }));
+  },
+
   async create(input: { name: string; location?: string }): Promise<Store> {
     const { data } = await api.post('/stores', input);
     const s = data.store;

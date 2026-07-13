@@ -23,6 +23,7 @@ const Billing = lazyWithRetry(() => import('@apps/movaia-admin/src/pages/Billing
 const BrandingSettings = lazyWithRetry(() => import('@apps/partner-admin/src/pages/BrandingSettings'));
 const StoreManagement = lazyWithRetry(() => import('@apps/partner-admin/src/pages/StoreManagement'));
 const AnalyticsDashboard = lazyWithRetry(() => import('@apps/partner-admin/src/pages/AnalyticsDashboard'));
+const Scans = lazyWithRetry(() => import('@apps/partner-admin/src/pages/Scans'));
 
 // Kiosk
 const KioskApp = lazyWithRetry(() => import('@apps/kiosk/src/pages/KioskApp'));
@@ -97,6 +98,15 @@ export default function App() {
           element={
             <ProtectedRoute kind="PARTNER" loginPath="/partner/login">
               <AnalyticsDashboard />
+            </ProtectedRoute>
+          }
+        />
+        {/* Full scan log — shared by partner + outlet admins (service scopes outlets). */}
+        <Route
+          path="/partner/scans"
+          element={
+            <ProtectedRoute kind="PARTNER" loginPath="/partner/login">
+              <Scans />
             </ProtectedRoute>
           }
         />

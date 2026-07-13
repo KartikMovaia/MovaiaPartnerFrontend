@@ -20,7 +20,7 @@ const slugify = (s: string) =>
 
 type SortKey = 'name' | 'storeCount' | 'scanCount';
 type SortDir = 'asc' | 'desc';
-const STATUS_FILTERS = ['ALL', 'ACTIVE', 'SUSPENDED', 'PROVISIONING', 'ARCHIVED'] as const;
+const STATUS_FILTERS = ['ALL', 'ACTIVE', 'SUSPENDED', 'PROVISIONING'] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
 
 export default function PartnerList() {
