@@ -11,9 +11,13 @@
 // Any state is previewable for QA via ?screen=<step> (e.g. ?screen=done).
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import { useTranslation, Trans } from 'react-i18next';
 import { PartnerThemeProvider, usePartnerContext } from '@shared/partners/PartnerThemeProvider';
 import { PartnerTheme } from '@shared/partners/types';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
+import LanguageSwitcher from '@shared/ui/LanguageSwitcher';
+import i18n from '@shared/i18n';
+import { deviceLanguage } from '@shared/i18n/config';
 import { kioskService, DeviceBinding } from '@shared/services/kiosk.service';
 import { beeps, unlockAudio } from '@shared/components/cues';
 
@@ -58,10 +62,10 @@ const MOVAIA_LOGO = '/assets/movaia-logo.png';
 const WELCOME_IMAGE = '/assets/kiosk-welcome.jpg';
 
 // The three selling points listed over the hero photo (icons match the login).
+// Text is pulled from the `welcome.hero.features.<key>` catalog entries at render.
 const HERO_FEATURES = [
   {
-    title: 'AI Analysis',
-    body: 'Get AI-powered insights to improve your performance and lower injury risk.',
+    key: 'analysis',
     icon: (
       <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
         <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
@@ -70,8 +74,7 @@ const HERO_FEATURES = [
     ),
   },
   {
-    title: 'Personalized Insights',
-    body: 'Tailored recommendations for your running style.',
+    key: 'insights',
     icon: (
       <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
         <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd" />
@@ -79,18 +82,23 @@ const HERO_FEATURES = [
     ),
   },
   {
-    title: 'Track Progress',
-    body: 'Monitor your improvement over time.',
+    key: 'progress',
     icon: (
       <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
         <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
       </svg>
     ),
   },
-];
+] as const;
 
 export default function KioskApp() {
   const { slug } = useParams();
+  // Shared public device: start in the iPad/browser's language. Per-customer
+  // choices are made via the on-screen switcher and reset on each goHome, so the
+  // kiosk never inherits the previous customer's language.
+  useEffect(() => {
+    void i18n.changeLanguage(deviceLanguage());
+  }, []);
   return (
     <PartnerThemeProvider slug={slug}>
       <DeviceGate slug={slug}>
@@ -106,6 +114,7 @@ export default function KioskApp() {
 // it exposes no dashboard/business data.
 function DeviceGate({ slug, children }: { slug?: string; children: React.ReactNode }) {
   const { theme } = usePartnerContext();
+  const { t } = useTranslation(['kiosk', 'common']);
   const [binding, setBinding] = useState<DeviceBinding | null>(null);
   const [checking, setChecking] = useState(true);
 
@@ -124,7 +133,7 @@ function DeviceGate({ slug, children }: { slug?: string; children: React.ReactNo
   if (checking) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
-        <LoadingSpinner label="Loading…" />
+        <LoadingSpinner label={t('common:loading')} />
       </div>
     );
   }
@@ -135,7 +144,7 @@ function DeviceGate({ slug, children }: { slug?: string; children: React.ReactNo
       <DeviceSetup
         theme={theme}
         slug={slug}
-        notice={`This iPad is set up for ${binding.partnerName}, not “${slug}”. Sign in with an outlet account for this partner to switch.`}
+        notice={t('deviceSetup.wrongPartner', { partner: binding.partnerName, slug })}
         onBound={check}
       />
     );
@@ -157,6 +166,7 @@ function DeviceSetup({
   notice?: string;
   onBound: () => void;
 }) {
+  const { t } = useTranslation('kiosk');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -170,14 +180,14 @@ function DeviceSetup({
     try {
       const b = await kioskService.deviceLogin(email.trim(), password);
       if (slug && b.partnerSlug !== slug) {
-        setError(`That account belongs to ${b.partnerName}, not this kiosk (“${slug}”).`);
+        setError(t('deviceSetup.accountMismatch', { partner: b.partnerName, slug }));
         await kioskService.deviceLogout(email.trim(), password).catch(() => {});
         return;
       }
       onBound();
     } catch (err) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      setError(msg || 'Couldn’t sign in. Check the connection and try again.');
+      setError(msg || t('deviceSetup.signInError'));
     } finally {
       setBusy(false);
     }
@@ -189,13 +199,12 @@ function DeviceSetup({
       <KioskHeader theme={theme} />
       <div className="flex flex-1 flex-col justify-center px-[90px]">
         <form onSubmit={submit} className="flex w-full max-w-[520px] flex-col gap-4">
-          <span className="text-[13px]" style={eyebrow}>Device setup</span>
+          <span className="text-[13px]" style={eyebrow}>{t('deviceSetup.eyebrow')}</span>
           <h1 className="m-0 text-[40px] font-extrabold leading-[1.05]" style={{ letterSpacing: '-.8px' }}>
-            Set up this kiosk
+            {t('deviceSetup.title')}
           </h1>
           <p className="m-0 text-[17px] leading-[1.5]" style={{ color: '#686868' }}>
-            Sign in with this outlet's account to link the iPad. Staff only — this is for
-            authentication and shows no dashboard data.
+            {t('deviceSetup.desc')}
           </p>
           {notice && (
             <p className="rounded-[12px] px-4 py-3 text-[14px]" style={{ background: '#fdf0d9', color: '#a9720d' }}>
@@ -206,7 +215,7 @@ function DeviceSetup({
             className={input}
             style={{ borderColor: '#e4e4e4' }}
             type="email"
-            placeholder="Outlet account email"
+            placeholder={t('deviceSetup.emailPlaceholder')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="username"
@@ -215,7 +224,7 @@ function DeviceSetup({
             className={input}
             style={{ borderColor: 'var(--brand-primary)' }}
             type="password"
-            placeholder="Password"
+            placeholder={t('deviceSetup.passwordPlaceholder')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
@@ -227,7 +236,7 @@ function DeviceSetup({
             className="mt-1 flex h-[64px] items-center justify-center rounded-[14px] text-[20px] font-bold disabled:opacity-40"
             style={brandBtn}
           >
-            {busy ? 'Linking…' : 'Link this device'}
+            {busy ? t('deviceSetup.linking') : t('deviceSetup.link')}
           </button>
         </form>
       </div>
@@ -257,6 +266,7 @@ function useIdleReset(step: Step, onIdle: () => void) {
 
 function KioskFlow() {
   const { theme, loading } = usePartnerContext();
+  const { t } = useTranslation(['kiosk', 'common']);
   const [params] = useSearchParams();
   const initial = (params.get('screen') as Step | null) ?? 'welcome';
 
@@ -281,6 +291,7 @@ function KioskFlow() {
     blobRef.current = null;
     scanRef.current = '';
     uploadUrlRef.current = '';
+    void i18n.changeLanguage(deviceLanguage()); // shared device: drop the previous customer's language
     setResetNonce((n) => n + 1); // remounts Welcome → clears any typed PII
     setStep('welcome');
     newSession();
@@ -291,7 +302,7 @@ function KioskFlow() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
-        <LoadingSpinner label="Loading…" />
+        <LoadingSpinner label={t('common:loading')} />
       </div>
     );
   }
@@ -368,11 +379,11 @@ function KioskFlow() {
         <button
           type="button"
           onClick={goHome}
-          aria-label="Start over"
+          aria-label={t('startOver')}
           className="fixed bottom-5 right-5 z-50 h-10 rounded-full px-4 text-[13px] font-semibold"
           style={{ background: 'rgba(20,20,20,.55)', color: '#fff', backdropFilter: 'blur(4px)' }}
         >
-          ⟲ Start over
+          ⟲ {t('startOver')}
         </button>
       )}
     </>
@@ -413,12 +424,17 @@ function Wordmark({ theme, size = 26, logoHeight = 46 }: { theme: PartnerTheme; 
 }
 
 function KioskHeader({ theme }: { theme: PartnerTheme }) {
+  const { t } = useTranslation('kiosk');
   return (
     <div className="flex items-center justify-between px-10 py-6">
       <Wordmark theme={theme} />
-      <div className="flex items-center gap-2" style={{ opacity: 0.65 }}>
-        <span className="text-xs" style={{ color: '#686868' }}>Powered by</span>
-        <img src={MOVAIA_LOGO} alt="Movaia" style={{ height: 16 }} />
+      <div className="flex items-center gap-4">
+        {/* Customer language picker — the choice lasts this session and resets on reset. */}
+        <LanguageSwitcher variant="kiosk" />
+        <div className="flex items-center gap-2" style={{ opacity: 0.65 }}>
+          <span className="text-xs" style={{ color: '#686868' }}>{t('poweredBy')}</span>
+          <img src={MOVAIA_LOGO} alt="Movaia" style={{ height: 16 }} />
+        </div>
       </div>
     </div>
   );
@@ -523,6 +539,7 @@ function SegToggle<T extends string>({
 /* ─────────────────────────── 01 · Welcome ─────────────────────────── */
 
 function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: IdentifyDetails) => Promise<void> }) {
+  const { t } = useTranslation('kiosk');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -547,16 +564,16 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
 
   const start = async () => {
     if (busy) return;
-    if (!firstName.trim()) return setError('Please enter your first name.');
-    if (!lastName.trim()) return setError('Please enter your last name.');
-    if (!email.trim()) return setError('Please enter your email so we can send your report.');
-    if (!emailValid) return setError('Please enter a valid email address.');
-    if (phone.trim() && phone.replace(/\D/g, '').length < 7) return setError('Please enter a valid phone number, or leave it blank.');
-    if (cm === null) return setError('Please enter your height.');
-    if (!heightValid) return setError('Please enter a realistic height.');
-    if (kg === null) return setError('Please enter your weight.');
-    if (!weightValid) return setError('Please enter a realistic weight.');
-    if (!consent) return setError('Please agree to the consent to continue.');
+    if (!firstName.trim()) return setError(t('welcome.errors.firstName'));
+    if (!lastName.trim()) return setError(t('welcome.errors.lastName'));
+    if (!email.trim()) return setError(t('welcome.errors.emailRequired'));
+    if (!emailValid) return setError(t('welcome.errors.emailInvalid'));
+    if (phone.trim() && phone.replace(/\D/g, '').length < 7) return setError(t('welcome.errors.phone'));
+    if (cm === null) return setError(t('welcome.errors.heightRequired'));
+    if (!heightValid) return setError(t('welcome.errors.heightInvalid'));
+    if (kg === null) return setError(t('welcome.errors.weightRequired'));
+    if (!weightValid) return setError(t('welcome.errors.weightInvalid'));
+    if (!consent) return setError(t('welcome.errors.consent'));
     setError(null);
     setBusy(true);
     try {
@@ -569,7 +586,7 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
         weightKg: kg,
       });
     } catch {
-      setError('Something went wrong. Please try again or ask a team member.');
+      setError(t('welcome.errors.generic'));
     } finally {
       setBusy(false);
     }
@@ -590,46 +607,45 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
         <KioskHeader theme={theme} />
         <div className="flex flex-1 flex-col justify-center gap-7 px-6 sm:px-10 lg:px-12 xl:px-16 2xl:px-[90px]">
         <div className="flex flex-col gap-2.5">
-          <span className="text-[14px]" style={eyebrow}>Running gait analysis</span>
+          <span className="text-[14px]" style={eyebrow}>{t('welcome.eyebrow')}</span>
           <h1 className="m-0 text-[46px] font-extrabold leading-[1.05]" style={{ letterSpacing: '-1px' }}>
-            Let’s analyze<br />your run.
+            {t('welcome.title')}
           </h1>
           <p className="m-0 max-w-[560px] text-[19px] leading-[1.5]" style={{ color: '#686868' }}>
-            Enter your details and we’ll email your personal analysis report — usually within a few minutes.
+            {t('welcome.desc')}
           </p>
         </div>
         <div className="flex max-w-[620px] flex-col gap-3.5">
           {/* Name — first + last, side by side */}
           <div className="flex gap-3.5">
-            <input className={`${input} min-w-0 flex-1`} aria-label="First name" autoComplete="off" style={{ borderColor: '#e4e4e4' }} placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-            <input className={`${input} min-w-0 flex-1`} aria-label="Last name" autoComplete="off" style={{ borderColor: '#e4e4e4' }} placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+            <input className={`${input} min-w-0 flex-1`} aria-label={t('welcome.firstName')} autoComplete="off" style={{ borderColor: '#e4e4e4' }} placeholder={t('welcome.firstName')} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            <input className={`${input} min-w-0 flex-1`} aria-label={t('welcome.lastName')} autoComplete="off" style={{ borderColor: '#e4e4e4' }} placeholder={t('welcome.lastName')} value={lastName} onChange={(e) => setLastName(e.target.value)} />
           </div>
-          <input className={input} type="email" inputMode="email" autoComplete="off" aria-label="Email address" style={{ borderColor: 'var(--brand-primary)' }} placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <input className={input} type="tel" inputMode="tel" autoComplete="off" aria-label="Phone number (optional)" style={{ borderColor: '#e4e4e4' }} placeholder="Phone number (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <input className={input} type="email" inputMode="email" autoComplete="off" aria-label={t('welcome.email')} style={{ borderColor: 'var(--brand-primary)' }} placeholder={t('welcome.email')} value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input className={input} type="tel" inputMode="tel" autoComplete="off" aria-label={t('welcome.phone')} style={{ borderColor: '#e4e4e4' }} placeholder={t('welcome.phone')} value={phone} onChange={(e) => setPhone(e.target.value)} />
           {/* Height + weight — value(s) with a unit toggle each */}
           <div className="flex gap-3.5">
             <div className="flex min-w-0 flex-1 gap-2">
               {heightUnit === 'cm' ? (
-                <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="decimal" aria-label="Height in centimetres" placeholder="Height" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
+                <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="decimal" aria-label={t('welcome.heightCmAria')} placeholder={t('welcome.height')} value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
               ) : (
                 <>
-                  <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="numeric" aria-label="Height in feet" placeholder="ft" value={heightFt} onChange={(e) => setHeightFt(e.target.value)} />
-                  <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="numeric" aria-label="Height, inches" placeholder="in" value={heightIn} onChange={(e) => setHeightIn(e.target.value)} />
+                  <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="numeric" aria-label={t('welcome.heightFtAria')} placeholder={t('welcome.ft')} value={heightFt} onChange={(e) => setHeightFt(e.target.value)} />
+                  <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="numeric" aria-label={t('welcome.heightInAria')} placeholder={t('welcome.in')} value={heightIn} onChange={(e) => setHeightIn(e.target.value)} />
                 </>
               )}
-              <SegToggle ariaLabel="Height unit" value={heightUnit} options={HEIGHT_UNITS} onChange={setHeightUnit} />
+              <SegToggle ariaLabel={t('welcome.heightUnitAria')} value={heightUnit} options={HEIGHT_UNITS} onChange={setHeightUnit} />
             </div>
             <div className="flex min-w-0 flex-1 gap-2">
-              <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="decimal" aria-label="Weight" placeholder="Weight" value={weight} onChange={(e) => setWeight(e.target.value)} />
-              <SegToggle ariaLabel="Weight unit" value={weightUnit} options={WEIGHT_UNITS} onChange={setWeightUnit} />
+              <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="decimal" aria-label={t('welcome.weightAria')} placeholder={t('welcome.weight')} value={weight} onChange={(e) => setWeight(e.target.value)} />
+              <SegToggle ariaLabel={t('welcome.weightUnitAria')} value={weightUnit} options={WEIGHT_UNITS} onChange={setWeightUnit} />
             </div>
           </div>
-          <span className="pl-1 text-[14px]" style={{ color: '#9a9a9a' }}>We’ll email your report here. Height &amp; weight help tailor your analysis; phone is optional.</span>
+          <span className="pl-1 text-[14px]" style={{ color: '#9a9a9a' }}>{t('welcome.helper')}</span>
           <label className="flex cursor-pointer items-start gap-3 pl-1 pt-1">
             <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-6 w-6 flex-none" style={{ accentColor: 'var(--brand-primary)' }} />
             <span className="text-[15px] leading-[1.45]" style={{ color: '#686868' }}>
-              I agree to be recorded and to Movaia creating an account to deliver my analysis, per the{' '}
-              <b style={{ color: '#141414' }}>terms &amp; privacy policy</b>.
+              <Trans t={t} i18nKey="welcome.consent" components={{ bold: <b style={{ color: '#141414' }} /> }} />
             </span>
           </label>
           {error && (
@@ -644,12 +660,12 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
           className="flex h-[72px] max-w-[620px] items-center justify-center gap-3 rounded-[14px] text-[22px] font-bold disabled:opacity-40"
           style={brandBtn}
         >
-          {busy ? 'Setting up…' : 'Start  →'}
+          {busy ? t('welcome.settingUp') : `${t('welcome.start')}  →`}
         </button>
         </div>
         <div className="px-6 pb-[30px] pt-[22px] sm:px-10 lg:px-12 xl:px-16 2xl:px-[90px]">
           <span className="text-[13px]" style={{ color: '#9a9a9a' }}>
-            By continuing you agree to Movaia’s terms &amp; privacy policy. Your data is never shared with other customers.
+            {t('welcome.footer')}
           </span>
         </div>
       </div>
@@ -679,17 +695,17 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
 
         <div className="relative z-10 p-12 pb-14">
           <h3 className="mb-4 text-5xl font-extrabold leading-tight">
-            <span style={{ color: 'var(--brand-primary)' }}>Master your mechanics.</span>
+            <span style={{ color: 'var(--brand-primary)' }}>{t('welcome.hero.titleAccent')}</span>
             <br />
-            <span className="text-white">Run better.</span>
+            <span className="text-white">{t('welcome.hero.titleRest')}</span>
           </h3>
           <p className="mb-8 max-w-sm text-base text-white/80">
-            Get AI-powered insights to improve your performance and prevent injuries.
+            {t('welcome.hero.desc')}
           </p>
 
           <div className="space-y-5">
             {HERO_FEATURES.map((f) => (
-              <div key={f.title} className="flex items-start gap-4">
+              <div key={f.key} className="flex items-start gap-4">
                 <div
                   className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl"
                   style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)' }}
@@ -697,9 +713,9 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
                   {f.icon}
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-white">{f.title}</h4>
-                  <p className="mt-0.5 text-xs text-white/80">{f.body}</p>
-                </div>  
+                  <h4 className="text-sm font-semibold text-white">{t(`welcome.hero.features.${f.key}.title`)}</h4>
+                  <p className="mt-0.5 text-xs text-white/80">{t(`welcome.hero.features.${f.key}.body`)}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -722,6 +738,7 @@ function Returning({
   onContinue: () => void;
   onNotMe: () => void;
 }) {
+  const { t } = useTranslation('kiosk');
   return (
     <Screen>
       <KioskHeader theme={theme} />
@@ -733,23 +750,23 @@ function Returning({
           {customer.initials ?? customer.firstName.slice(0, 2).toUpperCase()}
         </div>
         <div className="flex flex-col gap-3">
-          <span className="text-[14px]" style={eyebrow}>Welcome back</span>
+          <span className="text-[14px]" style={eyebrow}>{t('returning.eyebrow')}</span>
           <h1 className="m-0 text-[48px] font-extrabold leading-[1.05]" style={{ letterSpacing: '-1px' }}>
-            Hi again, {customer.firstName}!
+            {t('returning.title', { name: customer.firstName })}
           </h1>
           <p className="m-0 max-w-[560px] text-[19px] leading-[1.5]" style={{ color: '#686868' }}>
-            We found your account — <b style={{ color: '#141414' }}>{customer.email}</b>. Ready for another run analysis?
+            <Trans t={t} i18nKey="returning.desc" values={{ email: customer.email }} components={{ bold: <b style={{ color: '#141414' }} /> }} />
           </p>
         </div>
         <div className="flex w-full max-w-[620px] gap-3.5">
           <button onClick={onNotMe} className="h-[72px] flex-1 rounded-[14px] border-2 text-[19px] font-semibold" style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}>
-            Not me
+            {t('returning.notMe')}
           </button>
           <button onClick={onContinue} className="h-[72px] flex-[2] rounded-[14px] text-[22px] font-bold" style={brandBtn}>
-            Continue  →
+            {t('returning.continue')}  →
           </button>
         </div>
-        {customer.lastAnalysis && <span className="text-[14px]" style={{ color: '#9a9a9a' }}>Your last analysis: {customer.lastAnalysis}</span>}
+        {customer.lastAnalysis && <span className="text-[14px]" style={{ color: '#9a9a9a' }}>{t('returning.lastAnalysis', { date: customer.lastAnalysis })}</span>}
       </div>
     </Screen>
   );
@@ -758,6 +775,7 @@ function Returning({
 /* ─────────────────────────── 03 · Get ready ─────────────────────────── */
 
 function GetReady({ onReady }: { onReady: () => void }) {
+  const { t } = useTranslation('kiosk');
   const card = 'flex flex-1 flex-col gap-4 rounded-[18px] border-2 p-[26px]';
   const numChip = 'flex h-[52px] w-[52px] items-center justify-center rounded-[14px] text-[22px] font-extrabold';
   const chipStyle = { background: 'color-mix(in srgb, var(--brand-primary) 14%, #fff)', color: 'var(--brand-primary)' };
@@ -771,19 +789,19 @@ function GetReady({ onReady }: { onReady: () => void }) {
     <Screen>
       <div className="flex min-h-screen flex-col px-[60px] py-10">
         <div className="mb-1.5 flex items-center justify-between">
-          <span className="text-[15px] font-semibold" style={{ color: '#686868' }}>Step 1 of 3 · Get ready</span>
+          <span className="text-[15px] font-semibold" style={{ color: '#686868' }}>{t('getReady.step')}</span>
           <div className="flex gap-1.5">
             <span className="h-1.5 w-[34px] rounded-sm" style={{ background: 'var(--brand-primary)' }} />
             <span className="h-1.5 w-[34px] rounded-sm" style={{ background: '#e4e4e4' }} />
             <span className="h-1.5 w-[34px] rounded-sm" style={{ background: '#e4e4e4' }} />
           </div>
         </div>
-        <h1 className="mb-1 mt-3.5 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>Set up your treadmill run</h1>
-        <p className="mb-[26px] text-[19px]" style={{ color: '#686868' }}>Two quick things, then we’ll record a short side-view clip.</p>
+        <h1 className="mb-1 mt-3.5 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>{t('getReady.title')}</h1>
+        <p className="mb-[26px] text-[19px]" style={{ color: '#686868' }}>{t('getReady.subtitle')}</p>
         <div className="grid flex-1 grid-cols-1 gap-[22px] md:grid-cols-2">
           {[
-            { n: 1, title: 'Position on the treadmill', body: 'Warm up and settle into an easy, natural running pace before we start.', label: '[ illustration: runner on treadmill ]' },
-            { n: 2, title: 'Frame yourself side-on', body: 'Stand the iPad to your side so your whole body is in view from head to toe.', label: '[ illustration: side-view framing ]' },
+            { n: 1, title: t('getReady.card1.title'), body: t('getReady.card1.body'), label: t('getReady.card1.illo') },
+            { n: 2, title: t('getReady.card2.title'), body: t('getReady.card2.body'), label: t('getReady.card2.illo') },
           ].map((c) => (
             <div key={c.n} className={card} style={{ borderColor: '#eee' }}>
               <span className={numChip} style={chipStyle}>{c.n}</span>
@@ -799,13 +817,13 @@ function GetReady({ onReady }: { onReady: () => void }) {
           style={{ background: 'color-mix(in srgb, var(--brand-primary) 7%, #fff)' }}
         >
           <b className="text-[13px] font-bold uppercase tracking-[1.5px]" style={{ color: '#141414' }}>
-            What happens next
+            {t('getReady.whatNext')}
           </b>
           <div className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-3">
             {[
-              { icon: '⏱️', title: '20 seconds to get set', body: 'Build up to your natural running pace before we start.' },
-              { icon: '🔊', title: 'One beep = recording starts', body: 'Just keep running — the clip is about 10 seconds.' },
-              { icon: '🔊🔊', title: 'Two beeps = recording ends', body: 'You’re done — slow down and step off.' },
+              { icon: '⏱️', title: t('getReady.next.getSet.title', { count: SETUP_SECONDS }), body: t('getReady.next.getSet.body') },
+              { icon: '🔊', title: t('getReady.next.oneBeep.title'), body: t('getReady.next.oneBeep.body', { count: RECORD_SECONDS }) },
+              { icon: '🔊🔊', title: t('getReady.next.twoBeeps.title'), body: t('getReady.next.twoBeeps.body') },
             ].map((s) => (
               <div key={s.title} className="flex flex-col gap-2">
                 <span className="text-[28px] leading-none">{s.icon}</span>
@@ -823,7 +841,7 @@ function GetReady({ onReady }: { onReady: () => void }) {
           className="mt-5 h-[72px] rounded-[14px] text-[22px] font-bold"
           style={brandBtn}
         >
-          I’m ready — set up camera  →
+          {t('getReady.cta')}  →
         </button>
       </div>
     </Screen>
@@ -854,6 +872,7 @@ function CameraStage({
   onCameraError: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation('kiosk');
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -943,7 +962,7 @@ function CameraStage({
     return () => window.clearInterval(id);
   }, [step, startRecording, stopRecording]);
 
-  const feedLabel = `SIDE-VIEW ${live ? '· LIVE' : '· SIMULATED'}`;
+  const feedLabel = live ? t('camera.feedLive') : t('camera.feedSimulated');
   const recElapsed = RECORD_SECONDS - count;
   const mmss = `0:${String(Math.max(0, recElapsed)).padStart(2, '0')}`;
   const ringPct = step === 'preroll' ? (SETUP_SECONDS - count) / SETUP_SECONDS : 0;
@@ -961,7 +980,7 @@ function CameraStage({
 
       {step === 'preroll' && (
         <button onClick={onCancel} className="absolute right-[30px] top-6 h-11 rounded-full px-5 text-[15px] font-semibold" style={{ background: 'rgba(255,255,255,.12)', color: '#fff' }}>
-          Cancel
+          {t('camera.cancel')}
         </button>
       )}
 
@@ -977,7 +996,7 @@ function CameraStage({
       {/* center content */}
       {step === 'preroll' ? (
         <div className="relative z-10 flex flex-col items-center gap-3.5 text-center">
-          <span className="text-[16px]" style={{ ...eyebrow, color: 'rgba(255,255,255,.75)' }}>Get set — recording starts in</span>
+          <span className="text-[16px]" style={{ ...eyebrow, color: 'rgba(255,255,255,.75)' }}>{t('camera.prerollEyebrow')}</span>
           <div className="relative flex h-[220px] w-[220px] items-center justify-center">
             <svg viewBox="0 0 220 220" className="absolute inset-0 -rotate-90">
               <circle cx="110" cy="110" r="104" fill="none" stroke="rgba(255,255,255,.15)" strokeWidth="6" />
@@ -989,15 +1008,15 @@ function CameraStage({
             </svg>
             <span className="text-[104px] font-extrabold leading-none text-white">{count}</span>
           </div>
-          <span className="text-[18px]" style={{ color: 'rgba(255,255,255,.7)' }}>You’ll hear a beep when recording starts</span>
+          <span className="text-[18px]" style={{ color: 'rgba(255,255,255,.7)' }}>{t('camera.prerollHint')}</span>
         </div>
       ) : (
         <div className="relative z-10 flex flex-col items-center gap-[22px] text-center">
-          <span className="text-[26px] font-bold text-white" style={{ textShadow: '0 2px 12px rgba(0,0,0,.5)' }}>Keep running — you’re doing great</span>
+          <span className="text-[26px] font-bold text-white" style={{ textShadow: '0 2px 12px rgba(0,0,0,.5)' }}>{t('camera.recordingTitle')}</span>
           <div className="h-3.5 w-[520px] max-w-[80vw] overflow-hidden rounded-lg" style={{ background: 'rgba(255,255,255,.18)' }}>
             <span className="block h-full rounded-lg" style={{ width: `${(recElapsed / RECORD_SECONDS) * 100}%`, background: 'var(--brand-primary)' }} />
           </div>
-          <span className="text-[16px]" style={{ color: 'rgba(255,255,255,.7)' }}>{Math.max(0, count)} seconds left</span>
+          <span className="text-[16px]" style={{ color: 'rgba(255,255,255,.7)' }}>{t('camera.secondsLeft', { count: Math.max(0, count) })}</span>
         </div>
       )}
     </div>
@@ -1007,6 +1026,7 @@ function CameraStage({
 /* ─────────────────────────── 06 · Review ─────────────────────────── */
 
 function Review({ blob, onRecordAgain, onSubmit }: { blob: Blob | null; onRecordAgain: () => void; onSubmit: () => void }) {
+  const { t } = useTranslation('kiosk');
   // Create the playback URL in an effect (NOT useMemo) and revoke it in the SAME
   // effect's cleanup. The useMemo + separate-revoke pattern gets the URL revoked
   // out from under the <video> under React StrictMode's double-invoke, so the
@@ -1025,8 +1045,8 @@ function Review({ blob, onRecordAgain, onSubmit }: { blob: Blob | null; onRecord
   return (
     <Screen>
       <div className="flex min-h-screen flex-col px-[60px] py-10">
-        <h1 className="mb-1 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>Happy with your clip?</h1>
-        <p className="mb-[22px] text-[19px]" style={{ color: '#686868' }}>Give it a quick watch. You can re-record if you’d like.</p>
+        <h1 className="mb-1 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>{t('review.title')}</h1>
+        <p className="mb-[22px] text-[19px]" style={{ color: '#686868' }}>{t('review.subtitle')}</p>
         <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-[18px]" style={{ background: 'linear-gradient(135deg,#1b2430,#0e141c)' }}>
           {url ? (
             <video src={url} controls autoPlay muted playsInline className="h-full w-full object-contain" />
@@ -1034,18 +1054,18 @@ function Review({ blob, onRecordAgain, onSubmit }: { blob: Blob | null; onRecord
             <>
               <div className="absolute inset-0" style={{ background: 'repeating-linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,.02) 14px,transparent 14px,transparent 28px)' }} />
               <span className="flex flex-col items-center gap-1.5 text-center">
-                <span className="text-[16px]" style={{ color: 'rgba(255,255,255,.7)' }}>No preview available on this device</span>
-                <span className="text-[13px]" style={{ color: 'rgba(255,255,255,.45)' }}>Your clip will still be submitted for analysis.</span>
+                <span className="text-[16px]" style={{ color: 'rgba(255,255,255,.7)' }}>{t('review.noPreview')}</span>
+                <span className="text-[13px]" style={{ color: 'rgba(255,255,255,.45)' }}>{t('review.noPreviewSub')}</span>
               </span>
             </>
           )}
         </div>
         <div className="mt-6 flex gap-3.5">
           <button onClick={onRecordAgain} className="h-[72px] flex-1 rounded-[14px] border-2 text-[19px] font-semibold" style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}>
-            ↻ Record again
+            ↻ {t('review.recordAgain')}
           </button>
           <button onClick={onSubmit} className="h-[72px] flex-[2] rounded-[14px] text-[22px] font-bold" style={brandBtn}>
-            Submit for analysis  →
+            {t('review.submit')}  →
           </button>
         </div>
       </div>
@@ -1068,6 +1088,7 @@ function Uploading({
   onDone: () => void;
   onError: () => void;
 }) {
+  const { t } = useTranslation('kiosk');
   const [pct, setPct] = useState(0);
 
   useEffect(() => {
@@ -1105,15 +1126,15 @@ function Uploading({
           <span className="tnum text-[34px] font-extrabold" style={{ color: '#141414' }}>{pct}%</span>
         </div>
         <div className="flex flex-col gap-2.5">
-          <h1 className="m-0 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>Uploading your run…</h1>
-          <p className="m-0 text-[19px]" style={{ color: '#686868' }}>Hang tight — this only takes a moment. Please don’t close this screen.</p>
+          <h1 className="m-0 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>{t('uploading.title')}</h1>
+          <p className="m-0 text-[19px]" style={{ color: '#686868' }}>{t('uploading.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2.5">
-          <span className={chip} style={{ background: '#eef6dd', color: '#5a7d16' }}>✓ Clip captured</span>
+          <span className={chip} style={{ background: '#eef6dd', color: '#5a7d16' }}>✓ {t('uploading.clipCaptured')}</span>
           <span className={chip} style={{ background: '#fdf0d9', color: '#a9720d' }}>
-            <span className="h-[7px] w-[7px] animate-mv-pulse rounded-full" style={{ background: '#e0930f' }} />Uploading
+            <span className="h-[7px] w-[7px] animate-mv-pulse rounded-full" style={{ background: '#e0930f' }} />{t('uploading.uploading')}
           </span>
-          <span className={chip} style={{ background: '#f4f4f4', color: '#9a9a9a' }}>Analysis</span>
+          <span className={chip} style={{ background: '#f4f4f4', color: '#9a9a9a' }}>{t('uploading.analysis')}</span>
         </div>
       </div>
     </Screen>
@@ -1123,6 +1144,7 @@ function Uploading({
 /* ─────────────────────────── 08 · Confirmation ─────────────────────────── */
 
 function Confirmation({ email, onDone }: { email: string; onDone: () => void }) {
+  const { t } = useTranslation('kiosk');
   const [secs, setSecs] = useState(8);
   useEffect(() => {
     if (secs <= 0) {
@@ -1137,16 +1159,16 @@ function Confirmation({ email, onDone }: { email: string; onDone: () => void }) 
     <div className="flex min-h-screen w-full flex-col items-center justify-center gap-[30px] px-[90px] text-center" style={{ background: 'var(--brand-primary)' }}>
       <div className="flex h-[130px] w-[130px] items-center justify-center rounded-full bg-white text-[60px]" style={{ color: 'var(--brand-primary)' }}>✓</div>
       <div className="flex flex-col gap-3.5">
-        <h1 className="m-0 text-[52px] font-extrabold text-white" style={{ letterSpacing: '-1px' }}>You’re all set!</h1>
+        <h1 className="m-0 text-[52px] font-extrabold text-white" style={{ letterSpacing: '-1px' }}>{t('confirmation.title')}</h1>
         <p className="m-0 max-w-[600px] text-[21px] leading-[1.5]" style={{ color: 'rgba(255,255,255,.9)' }}>
-          We’ll email your analysis to<br /><b className="text-white">{email || 'your inbox'}</b> as soon as it’s ready.
+          <Trans t={t} i18nKey="confirmation.desc" values={{ email: email || t('confirmation.inbox') }} components={{ bold: <b className="text-white" /> }} />
         </p>
       </div>
       <button onClick={onDone} className="h-[66px] rounded-[14px] bg-white px-[46px] text-[20px] font-bold" style={{ color: 'var(--brand-accent)' }}>
-        Done
+        {t('confirmation.done')}
       </button>
       <span className="text-[15px]" style={{ color: 'rgba(255,255,255,.75)' }}>
-        Returning to start in {secs}s · this device won’t keep your details
+        {t('confirmation.resetIn', { count: secs })}
       </span>
     </div>
   );
@@ -1155,23 +1177,23 @@ function Confirmation({ email, onDone }: { email: string; onDone: () => void }) 
 /* ─────────────────────── 09 · Camera permission denied ─────────────────────── */
 
 function CameraDenied({ theme, onRetry, onHome }: { theme: PartnerTheme; onRetry: () => void; onHome: () => void }) {
+  const { t } = useTranslation('kiosk');
   return (
     <Screen>
       <div className="flex min-h-screen flex-col items-center justify-center gap-7 px-[100px] text-center">
         <div className="flex h-[120px] w-[120px] items-center justify-center rounded-[28px] text-[56px]" style={{ background: '#fce7e6', color: '#d64a43' }}>⚠</div>
         <div className="flex flex-col gap-3">
-          <h1 className="m-0 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>Camera access is needed</h1>
+          <h1 className="m-0 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>{t('cameraDenied.title')}</h1>
           <p className="m-0 max-w-[600px] text-[19px] leading-[1.55]" style={{ color: '#686868' }}>
-            To record your run we need permission to use this iPad’s camera. Enable it in{' '}
-            <b style={{ color: '#141414' }}>Settings → {theme.displayName} → Camera</b>, then try again.
+            <Trans t={t} i18nKey="cameraDenied.desc" values={{ partner: theme.displayName }} components={{ bold: <b style={{ color: '#141414' }} /> }} />
           </p>
         </div>
         <div className="flex gap-3.5">
           <button onClick={onHome} className="h-[66px] rounded-[14px] border-2 px-[34px] text-[18px] font-semibold" style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}>
-            Get staff help
+            {t('cameraDenied.getHelp')}
           </button>
           <button onClick={onRetry} className="h-[66px] rounded-[14px] px-10 text-[19px] font-bold" style={brandBtn}>
-            Try again
+            {t('cameraDenied.tryAgain')}
           </button>
         </div>
       </div>
@@ -1182,25 +1204,26 @@ function CameraDenied({ theme, onRetry, onHome }: { theme: PartnerTheme; onRetry
 /* ─────────────────────────── 10 · Upload failed ─────────────────────────── */
 
 function UploadFailed({ theme, onRetry, onHome }: { theme: PartnerTheme; onRetry: () => void; onHome: () => void }) {
+  const { t } = useTranslation('kiosk');
   return (
     <Screen>
       <div className="flex min-h-screen flex-col items-center justify-center gap-7 px-[100px] text-center">
         <div className="flex h-[120px] w-[120px] items-center justify-center rounded-[28px] text-[56px]" style={{ background: '#fce7e6', color: '#d64a43' }}>⟳</div>
         <div className="flex flex-col gap-3">
-          <h1 className="m-0 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>Upload didn’t go through</h1>
+          <h1 className="m-0 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>{t('uploadFailed.title')}</h1>
           <p className="m-0 max-w-[600px] text-[19px] leading-[1.55]" style={{ color: '#686868' }}>
-            We couldn’t reach the network — check the connection and tap retry. You won’t need to record again.
+            {t('uploadFailed.desc')}
           </p>
         </div>
         <div className="flex gap-3.5">
           <button onClick={onHome} className="h-[66px] rounded-[14px] border-2 px-[34px] text-[18px] font-semibold" style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}>
-            Start over
+            {t('uploadFailed.startOver')}
           </button>
           <button onClick={onRetry} className="h-[66px] rounded-[14px] px-10 text-[19px] font-bold" style={brandBtn}>
-            ↻ Retry upload
+            ↻ {t('uploadFailed.retry')}
           </button>
         </div>
-        <span className="text-[14px]" style={{ color: '#9a9a9a' }}>Still stuck? Ask a {theme.displayName} team member for help.</span>
+        <span className="text-[14px]" style={{ color: '#9a9a9a' }}>{t('uploadFailed.help', { partner: theme.displayName })}</span>
       </div>
     </Screen>
   );

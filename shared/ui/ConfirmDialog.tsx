@@ -2,6 +2,7 @@
 //   const confirm = useConfirm();
 //   if (await confirm({ title, message, danger: true })) { …destructive action… }
 import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface ConfirmOptions {
   title: string;
@@ -16,6 +17,7 @@ type ConfirmFn = (options: ConfirmOptions) => Promise<boolean>;
 const ConfirmContext = createContext<ConfirmFn>(async () => false);
 
 export function ConfirmProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation('common');
   const [options, setOptions] = useState<ConfirmOptions | null>(null);
   const resolver = useRef<((value: boolean) => void) | null>(null);
 
@@ -68,7 +70,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 onClick={() => close(false)}
                 className="h-10 rounded-[10px] border border-[#e4e4e4] bg-white px-4 text-[13px] font-semibold"
               >
-                {options.cancelLabel ?? 'Cancel'}
+                {options.cancelLabel ?? t('actions.cancel')}
               </button>
               <button
                 type="button"
@@ -77,7 +79,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 className="h-10 rounded-[10px] px-5 text-[13px] font-bold text-white"
                 style={{ background: options.danger ? '#c5352b' : '#141414' }}
               >
-                {options.confirmLabel ?? 'Confirm'}
+                {options.confirmLabel ?? t('actions.confirm')}
               </button>
             </div>
           </div>

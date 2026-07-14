@@ -25,6 +25,23 @@ body {
   color: #000000;
 }
 
+/* Per-language font stacks. Montserrat (Latin-only) leads so brand name / numbers
+   keep the house look, and CJK glyphs fall through per-character to a script-
+   appropriate SYSTEM font — PingFang / Hiragino / Apple SD Gothic ship on the
+   iPads the kiosk runs on and on staff Macs/Windows, so no heavy CJK web font is
+   loaded. Noto Sans * is listed last in case it's installed. Keyed off <html lang>,
+   which shared/i18n keeps in sync with the active language. */
+html[lang='zh-Hant'] body {
+  font-family: 'Montserrat', 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', system-ui, sans-serif;
+}
+html[lang='ja'] body {
+  font-family: 'Montserrat', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', 'Noto Sans JP', system-ui,
+    sans-serif;
+}
+html[lang='ko'] body {
+  font-family: 'Montserrat', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', system-ui, sans-serif;
+}
+
 /* Tabular numerals for timers / KPI figures. */
 .tnum {
   font-variant-numeric: tabular-nums;

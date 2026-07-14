@@ -2,14 +2,17 @@
 // plus a Custom mode that reveals two date inputs. Light chrome, green accent to
 // match the admin surfaces. Emits a fully-resolved DateRange to the parent.
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DateRange, RangePreset, presetRange, customRange } from '@shared/utils/dateRange';
 
-const PRESETS: Array<{ key: Exclude<RangePreset, 'custom'>; label: string }> = [
-  { key: 'today', label: 'Today' },
-  { key: '7d', label: '7 days' },
-  { key: '30d', label: '30 days' },
-  { key: 'all', label: 'All time' },
-];
+// Preset order; labels come from the `common:dateRange.*` catalog at render.
+const PRESET_KEYS: Array<Exclude<RangePreset, 'custom'>> = ['today', '7d', '30d', 'all'];
+const PRESET_LABEL: Record<Exclude<RangePreset, 'custom'>, string> = {
+  today: 'dateRange.today',
+  '7d': 'dateRange.7d',
+  '30d': 'dateRange.30d',
+  all: 'dateRange.all',
+};
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const toDateInput = (iso: string | null): string => {
@@ -25,6 +28,7 @@ export default function DateRangePicker({
   value: DateRange;
   onChange: (r: DateRange) => void;
 }) {
+  const { t } = useTranslation('common');
   const [customOpen, setCustomOpen] = useState(value.preset === 'custom');
   const [from, setFrom] = useState(toDateInput(value.from));
   const [to, setTo] = useState(toDateInput(value.to));
@@ -41,18 +45,18 @@ export default function DateRangePicker({
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      {PRESETS.map((p) => (
+      {PRESET_KEYS.map((key) => (
         <button
-          key={p.key}
+          key={key}
           type="button"
           onClick={() => {
             setCustomOpen(false);
-            onChange(presetRange(p.key));
+            onChange(presetRange(key));
           }}
           className="h-9 rounded-[9px] border px-3 text-[13px] transition-colors"
-          style={btn(value.preset === p.key)}
+          style={btn(value.preset === key)}
         >
-          {p.label}
+          {t(PRESET_LABEL[key])}
         </button>
       ))}
       <button
@@ -62,7 +66,7 @@ export default function DateRangePicker({
         style={btn(value.preset === 'custom')}
         aria-expanded={customOpen}
       >
-        Custom
+        {t('dateRange.custom')}
       </button>
 
       {customOpen && (
@@ -71,7 +75,7 @@ export default function DateRangePicker({
             type="date"
             value={from}
             max={to || undefined}
-            aria-label="Start date"
+            aria-label={t('dateRange.startDate')}
             onChange={(e) => {
               setFrom(e.target.value);
               applyCustom(e.target.value, to);
@@ -83,7 +87,7 @@ export default function DateRangePicker({
             type="date"
             value={to}
             min={from || undefined}
-            aria-label="End date"
+            aria-label={t('dateRange.endDate')}
             onChange={(e) => {
               setTo(e.target.value);
               applyCustom(from, e.target.value);

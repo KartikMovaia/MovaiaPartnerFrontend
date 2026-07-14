@@ -1,0 +1,157 @@
+{
+  "poweredBy": "Bereitgestellt von",
+  "startOver": "Neu starten",
+  "deviceSetup": {
+    "eyebrow": "Geräteeinrichtung",
+    "title": "Diesen Kiosk einrichten",
+    "desc": "Melden Sie sich mit dem Konto dieser Filiale an, um das iPad zu verknüpfen. Nur für Mitarbeitende — dies dient der Authentifizierung und zeigt keine Dashboard-Daten.",
+    "wrongPartner": "Dieses iPad ist für {{partner}} eingerichtet, nicht für „{{slug}}“. Melden Sie sich mit einem Filialkonto dieses Partners an, um zu wechseln.",
+    "accountMismatch": "Dieses Konto gehört zu {{partner}}, nicht zu diesem Kiosk („{{slug}}“).",
+    "signInError": "Anmeldung fehlgeschlagen. Prüfen Sie die Verbindung und versuchen Sie es erneut.",
+    "emailPlaceholder": "E-Mail des Filialkontos",
+    "passwordPlaceholder": "Passwort",
+    "link": "Gerät verknüpfen",
+    "linking": "Wird verknüpft…"
+  },
+  "welcome": {
+    "eyebrow": "Laufstil-Analyse",
+    "title": "Analysieren wir Ihren Lauf.",
+    "desc": "Geben Sie Ihre Daten ein und wir senden Ihnen Ihren persönlichen Analysebericht per E-Mail — meist innerhalb weniger Minuten.",
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "email": "E-Mail-Adresse",
+    "phone": "Telefonnummer (optional)",
+    "height": "Größe",
+    "weight": "Gewicht",
+    "heightCmAria": "Größe in Zentimetern",
+    "heightFtAria": "Größe in Fuß",
+    "heightInAria": "Größe, Zoll",
+    "heightUnitAria": "Einheit für Größe",
+    "weightAria": "Gewicht",
+    "weightUnitAria": "Einheit für Gewicht",
+    "ft": "ft",
+    "in": "in",
+    "helper": "Hierhin senden wir Ihren Bericht. Größe und Gewicht helfen, Ihre Analyse anzupassen; die Telefonnummer ist optional.",
+    "consent": "Ich stimme zu, aufgezeichnet zu werden und dass Movaia ein Konto erstellt, um mir meine Analyse bereitzustellen, gemäß den <bold>Nutzungsbedingungen und der Datenschutzerklärung</bold>.",
+    "start": "Starten",
+    "settingUp": "Wird vorbereitet…",
+    "footer": "Mit dem Fortfahren stimmen Sie den Nutzungsbedingungen und der Datenschutzerklärung von Movaia zu. Ihre Daten werden niemals mit anderen Kundinnen und Kunden geteilt.",
+    "errors": {
+      "firstName": "Bitte geben Sie Ihren Vornamen ein.",
+      "lastName": "Bitte geben Sie Ihren Nachnamen ein.",
+      "emailRequired": "Bitte geben Sie Ihre E-Mail-Adresse ein, damit wir Ihren Bericht senden können.",
+      "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+      "phone": "Bitte geben Sie eine gültige Telefonnummer ein oder lassen Sie das Feld leer.",
+      "heightRequired": "Bitte geben Sie Ihre Größe ein.",
+      "heightInvalid": "Bitte geben Sie eine realistische Größe ein.",
+      "weightRequired": "Bitte geben Sie Ihr Gewicht ein.",
+      "weightInvalid": "Bitte geben Sie ein realistisches Gewicht ein.",
+      "consent": "Bitte stimmen Sie zu, um fortzufahren.",
+      "generic": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut oder wenden Sie sich an einen Mitarbeitenden."
+    },
+    "hero": {
+      "titleAccent": "Meistern Sie Ihre Technik.",
+      "titleRest": "Laufen Sie besser.",
+      "desc": "Erhalten Sie KI-gestützte Erkenntnisse, um Ihre Leistung zu verbessern und Verletzungen vorzubeugen.",
+      "features": {
+        "analysis": {
+          "title": "KI-Analyse",
+          "body": "Erhalten Sie KI-gestützte Erkenntnisse, um Ihre Leistung zu verbessern und das Verletzungsrisiko zu senken."
+        },
+        "insights": {
+          "title": "Persönliche Erkenntnisse",
+          "body": "Maßgeschneiderte Empfehlungen für Ihren Laufstil."
+        },
+        "progress": {
+          "title": "Fortschritt verfolgen",
+          "body": "Verfolgen Sie Ihre Verbesserung über die Zeit."
+        }
+      }
+    }
+  },
+  "returning": {
+    "eyebrow": "Willkommen zurück",
+    "title": "Schön, Sie wiederzusehen, {{name}}!",
+    "desc": "Wir haben Ihr Konto gefunden — <bold>{{email}}</bold>. Bereit für eine weitere Laufanalyse?",
+    "notMe": "Nicht ich",
+    "continue": "Weiter",
+    "lastAnalysis": "Ihre letzte Analyse: {{date}}"
+  },
+  "getReady": {
+    "step": "Schritt 1 von 3 · Vorbereiten",
+    "title": "Bereiten Sie Ihren Lauf auf dem Laufband vor",
+    "subtitle": "Zwei kurze Dinge, dann nehmen wir einen kurzen Clip von der Seite auf.",
+    "card1": {
+      "title": "Auf dem Laufband positionieren",
+      "body": "Wärmen Sie sich auf und finden Sie ein lockeres, natürliches Lauftempo, bevor wir beginnen.",
+      "illo": "[ Illustration: Läufer auf dem Laufband ]"
+    },
+    "card2": {
+      "title": "Positionieren Sie sich seitlich im Bild",
+      "body": "Stellen Sie das iPad seitlich neben sich, sodass Ihr ganzer Körper von Kopf bis Fuß im Bild ist.",
+      "illo": "[ Illustration: seitliche Bildausrichtung ]"
+    },
+    "whatNext": "Was als Nächstes passiert",
+    "next": {
+      "getSet": {
+        "title": "{{count}} Sekunden zum Bereitmachen",
+        "body": "Steigern Sie sich bis zu Ihrem natürlichen Lauftempo, bevor wir beginnen."
+      },
+      "oneBeep": {
+        "title": "Ein Piepton = Aufnahme startet",
+        "body": "Laufen Sie einfach weiter — der Clip dauert etwa {{count}} Sekunden."
+      },
+      "twoBeeps": {
+        "title": "Zwei Pieptöne = Aufnahme endet",
+        "body": "Fertig — werden Sie langsamer und steigen Sie ab."
+      }
+    },
+    "cta": "Ich bin bereit — Kamera einrichten"
+  },
+  "camera": {
+    "feedLive": "SEITENANSICHT · LIVE",
+    "feedSimulated": "SEITENANSICHT · SIMULIERT",
+    "cancel": "Abbrechen",
+    "prerollEyebrow": "Bereitmachen — Aufnahme startet in",
+    "prerollHint": "Sie hören einen Piepton, wenn die Aufnahme startet",
+    "recordingTitle": "Laufen Sie weiter — das machen Sie großartig",
+    "secondsLeft_one": "Noch {{count}} Sekunde",
+    "secondsLeft_other": "Noch {{count}} Sekunden"
+  },
+  "review": {
+    "title": "Zufrieden mit Ihrem Clip?",
+    "subtitle": "Schauen Sie ihn sich kurz an. Sie können bei Bedarf neu aufnehmen.",
+    "noPreview": "Auf diesem Gerät ist keine Vorschau verfügbar",
+    "noPreviewSub": "Ihr Clip wird trotzdem zur Analyse übermittelt.",
+    "recordAgain": "Neu aufnehmen",
+    "submit": "Zur Analyse senden"
+  },
+  "uploading": {
+    "title": "Ihr Lauf wird hochgeladen…",
+    "subtitle": "Einen Moment — das dauert nur kurz. Bitte schließen Sie diesen Bildschirm nicht.",
+    "clipCaptured": "Clip aufgenommen",
+    "uploading": "Wird hochgeladen",
+    "analysis": "Analyse"
+  },
+  "confirmation": {
+    "title": "Alles erledigt!",
+    "desc": "Wir senden Ihre Analyse an <bold>{{email}}</bold>, sobald sie fertig ist.",
+    "inbox": "Ihr Postfach",
+    "done": "Fertig",
+    "resetIn_one": "Zurück zum Start in {{count}}s · dieses Gerät speichert Ihre Daten nicht",
+    "resetIn_other": "Zurück zum Start in {{count}}s · dieses Gerät speichert Ihre Daten nicht"
+  },
+  "cameraDenied": {
+    "title": "Kamerazugriff erforderlich",
+    "desc": "Um Ihren Lauf aufzunehmen, benötigen wir die Erlaubnis, die Kamera dieses iPads zu nutzen. Aktivieren Sie sie unter <bold>Einstellungen → {{partner}} → Kamera</bold> und versuchen Sie es erneut.",
+    "getHelp": "Mitarbeitende um Hilfe bitten",
+    "tryAgain": "Erneut versuchen"
+  },
+  "uploadFailed": {
+    "title": "Upload nicht erfolgreich",
+    "desc": "Wir konnten das Netzwerk nicht erreichen — prüfen Sie die Verbindung und tippen Sie auf Wiederholen. Sie müssen nicht erneut aufnehmen.",
+    "startOver": "Neu starten",
+    "retry": "Upload wiederholen",
+    "help": "Immer noch Probleme? Bitten Sie einen Mitarbeitenden von {{partner}} um Hilfe."
+  }
+}

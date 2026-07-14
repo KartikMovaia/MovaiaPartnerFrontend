@@ -1,0 +1,49 @@
+{
+  "loading": "載入中…",
+  "language": {
+    "label": "語言",
+    "change": "切換語言"
+  },
+  "actions": {
+    "tryAgain": "再試一次",
+    "cancel": "取消",
+    "confirm": "確認",
+    "signOut": "登出"
+  },
+  "errorState": {
+    "generic": "載入這筆資料時發生錯誤。"
+  },
+  "status": {
+    "completed": "已完成",
+    "processing": "處理中",
+    "failed": "失敗",
+    "pending": "待處理",
+    "active": "啟用中",
+    "onboarding": "導入中",
+    "paused": "已暫停",
+    "inactive": "未啟用",
+    "sent": "已寄出",
+    "suspended": "已停權"
+  },
+  "report": {
+    "sent": "已寄出",
+    "pending": "待寄送",
+    "none": "—"
+  },
+  "dateRange": {
+    "today": "今天",
+    "7d": "7 天",
+    "30d": "30 天",
+    "all": "全部時間",
+    "custom": "自訂",
+    "startDate": "開始日期",
+    "endDate": "結束日期",
+    "labels": {
+      "today": "今天",
+      "7d": "過去 7 天",
+      "30d": "過去 30 天",
+      "all": "全部時間",
+      "custom": "自訂範圍"
+    }
+  }
+}

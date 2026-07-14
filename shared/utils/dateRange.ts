@@ -1,6 +1,8 @@
 // Shared date-range model for the time-period-configurable dashboards. A range is
 // a preset (or custom) plus the resolved ISO instants sent to the API. `all` maps
 // to null/null (the backend treats both-omitted as all-time).
+import i18n from '@shared/i18n';
+
 export type RangePreset = 'today' | '7d' | '30d' | 'all' | 'custom';
 
 export interface DateRange {
@@ -41,19 +43,11 @@ export function customRange(fromDate: string, toDate: string): DateRange | null 
 
 export const DEFAULT_RANGE: DateRange = presetRange('all');
 
+// Human label for the active range (e.g. the "sub" under a KPI). Localized via the
+// `common:dateRange.labels.*` catalog; read from the i18n singleton so this stays
+// a plain util (no hook needed at call sites).
 export function rangeLabel(r: DateRange): string {
-  switch (r.preset) {
-    case 'today':
-      return 'today';
-    case '7d':
-      return 'last 7 days';
-    case '30d':
-      return 'last 30 days';
-    case 'all':
-      return 'all time';
-    case 'custom':
-      return 'custom range';
-  }
+  return i18n.t(`common:dateRange.labels.${r.preset}`);
 }
 
 // Query params for the analytics API (omits nulls → all-time).

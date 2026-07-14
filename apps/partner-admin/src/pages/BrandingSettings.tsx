@@ -1,18 +1,12 @@
 // Kiosk white-label editor with a live preview (design 532–598). Colors + logo
 // persist to the real branding API; publishing re-themes every outlet kiosk.
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LayoutGrid, Store, Palette, Upload, ExternalLink, Copy, ScrollText } from 'lucide-react';
 import AdminShell, { NavItem, shellUserFromStaff } from '@shared/ui/AdminShell';
 import { useAuth } from '@shared/contexts/AuthContext';
 import { useToast } from '@shared/ui/Toast';
 import { brandingService } from '@shared/services/branding.service';
-
-const NAV: NavItem[] = [
-  { icon: <LayoutGrid size={16} />, label: 'Dashboard', to: '/partner' },
-  { icon: <ScrollText size={16} />, label: 'Scans', to: '/partner/scans' },
-  { icon: <Store size={16} />, label: 'Branches', to: '/partner/stores' },
-  { icon: <Palette size={16} />, label: 'Branding', to: '/partner/branding', active: true },
-];
 
 const PRIMARY_SWATCHES = ['#0e9e9e', '#e0930f', '#d64a43', '#6a5cff', '#141414'];
 const ACCENT_SWATCHES = ['#0b6e6e', '#141414', '#686868'];
@@ -32,8 +26,15 @@ function darken(hex: string, amount = 0.12): string {
 }
 
 export default function BrandingSettings() {
+  const { t } = useTranslation('partner');
   const { staff, logout } = useAuth();
   const toast = useToast();
+  const NAV: NavItem[] = [
+    { icon: <LayoutGrid size={16} />, label: t('nav.dashboard'), to: '/partner' },
+    { icon: <ScrollText size={16} />, label: t('nav.scans'), to: '/partner/scans' },
+    { icon: <Store size={16} />, label: t('nav.branches'), to: '/partner/stores' },
+    { icon: <Palette size={16} />, label: t('nav.branding'), to: '/partner/branding', active: true },
+  ];
   const [primary, setPrimary] = useState('#0e9e9e');
   const [accent, setAccent] = useState('#0b6e6e');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -55,9 +56,9 @@ export default function BrandingSettings() {
     setBusy(true);
     try {
       await brandingService.update({ primaryColor: primary, primaryHover: darken(primary), accentColor: accent });
-      toast('Branding published — every outlet kiosk is updated.', 'success');
+      toast(t('branding.published'), 'success');
     } catch {
-      toast('Couldn’t publish branding. Please try again.', 'error');
+      toast(t('branding.publishError'), 'error');
     } finally {
       setBusy(false);
     }
@@ -71,24 +72,24 @@ export default function BrandingSettings() {
     try {
       const { branding } = await brandingService.uploadLogo(file);
       setLogoUrl(branding.logoUrl);
-      toast('Logo updated.', 'success');
+      toast(t('branding.logoUpdated'), 'success');
     } catch {
-      toast('Logo upload failed. Try a PNG, JPG, SVG, or WebP.', 'error');
+      toast(t('branding.logoError'), 'error');
     } finally {
       setUploading(false);
     }
   };
 
-  const brandName = staff?.partnerName ?? 'Your brand';
+  const brandName = staff?.partnerName ?? t('branding.yourBrand');
   const kioskUrl = staff?.partnerSlug ? `${window.location.origin}/kiosk/${staff.partnerSlug}` : null;
 
   const copyKioskUrl = async () => {
     if (!kioskUrl) return;
     try {
       await navigator.clipboard.writeText(kioskUrl);
-      toast('Kiosk URL copied.', 'success');
+      toast(t('branding.urlCopied'), 'success');
     } catch {
-      toast('Couldn’t copy — select the link and copy it manually.', 'error');
+      toast(t('branding.urlCopyError'), 'error');
     }
   };
 
@@ -97,14 +98,14 @@ export default function BrandingSettings() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="mb-1 text-2xl font-extrabold tracking-[-.4px]">Kiosk branding</h1>
+          <h1 className="mb-1 text-2xl font-extrabold tracking-[-.4px]">{t('branding.title')}</h1>
           <p className="text-[13px]" style={{ color: '#686868' }}>
-            Your colors &amp; logo — applied to every kiosk on publish.
+            {t('branding.subtitle')}
           </p>
           {kioskUrl && (
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-bold uppercase tracking-[.5px]" style={{ color: '#9a9a9a' }}>
-                Kiosk URL
+                {t('branding.kioskUrl')}
               </span>
               <a
                 href={kioskUrl}
@@ -120,7 +121,7 @@ export default function BrandingSettings() {
                 onClick={copyKioskUrl}
                 className="inline-flex items-center gap-1 rounded-[7px] border border-[#e4e4e4] bg-white px-2 py-1 text-[12px] text-[#686868] hover:bg-[#fafafa]"
               >
-                <Copy size={12} /> Copy
+                <Copy size={12} /> {t('branding.copy')}
               </button>
             </div>
           )}
@@ -132,7 +133,7 @@ export default function BrandingSettings() {
           className="h-[42px] rounded-[10px] px-[22px] text-sm font-bold disabled:opacity-60"
           style={{ background: '#ABD037', color: '#1c2b00' }}
         >
-          {busy ? 'Publishing…' : 'Publish changes'}
+          {busy ? t('branding.publishing') : t('branding.publish')}
         </button>
       </div>
 
@@ -140,14 +141,14 @@ export default function BrandingSettings() {
         {/* Controls */}
         <div className="flex flex-col gap-4">
           {/* Logo */}
-          <Panel title="Logo">
+          <Panel title={t('branding.logo')}>
             <div className="flex items-center gap-3.5">
               <div
                 className="flex h-[60px] w-[120px] items-center justify-center overflow-hidden rounded-[10px]"
                 style={{ background: '#fff', border: '1px solid #eee' }}
               >
                 {logoUrl ? (
-                  <img src={logoUrl} alt={`${brandName} logo`} className="max-h-full max-w-full object-contain" />
+                  <img src={logoUrl} alt={t('branding.logoAlt', { brand: brandName })} className="max-h-full max-w-full object-contain" />
                 ) : (
                   <span className="text-base font-extrabold" style={{ color: primary }}>
                     {brandName.slice(0, 12)}
@@ -162,13 +163,13 @@ export default function BrandingSettings() {
                 className="flex h-[38px] items-center gap-1.5 rounded-[9px] px-4 text-[13px] disabled:opacity-60"
                 style={{ border: '1px dashed #cfcfcf', background: '#fafafa', color: '#686868' }}
               >
-                <Upload size={14} /> {uploading ? 'Uploading…' : logoUrl ? 'Replace' : 'Upload'}
+                <Upload size={14} /> {uploading ? t('branding.uploading') : logoUrl ? t('branding.replace') : t('branding.upload')}
               </button>
             </div>
           </Panel>
 
           {/* Primary color */}
-          <Panel title="Primary color">
+          <Panel title={t('branding.primaryColor')}>
             <div className="flex flex-wrap items-center gap-2.5">
               {PRIMARY_SWATCHES.map((c) => (
                 <Swatch key={c} color={c} selected={c.toLowerCase() === primary.toLowerCase()} onClick={() => setPrimary(c)} />
@@ -184,7 +185,7 @@ export default function BrandingSettings() {
           </Panel>
 
           {/* Accent / secondary */}
-          <Panel title="Accent / secondary">
+          <Panel title={t('branding.accentColor')}>
             <div className="flex flex-wrap items-center gap-2.5">
               {ACCENT_SWATCHES.map((c) => (
                 <Swatch key={c} color={c} selected={c.toLowerCase() === accent.toLowerCase()} onClick={() => setAccent(c)} />
@@ -197,10 +198,10 @@ export default function BrandingSettings() {
         {/* Live preview */}
         <Panel>
           <div className="flex items-center justify-between">
-            <b className="text-[13px]">Live preview</b>
+            <b className="text-[13px]">{t('branding.livePreview')}</b>
             <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: '#5a7d16' }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#7fb015' }} />
-              Kiosk · Welcome
+              {t('branding.previewTag')}
             </span>
           </div>
           <div className="flex items-center justify-center rounded-[14px] p-[22px]" style={{ background: '#e7e5e0' }}>
@@ -211,24 +212,22 @@ export default function BrandingSettings() {
               >
                 <div className="flex items-center justify-between">
                   {logoUrl ? (
-                    <img src={logoUrl} alt={`${brandName} logo`} style={{ height: 18 }} className="object-contain" />
+                    <img src={logoUrl} alt={t('branding.logoAlt', { brand: brandName })} style={{ height: 18 }} className="object-contain" />
                   ) : (
                     <span className="text-[15px] font-extrabold" style={{ color: primary }}>
                       {brandName}
                     </span>
                   )}
                   <span className="text-[9px]" style={{ color: '#9a9a9a' }}>
-                    Powered by Movaia
+                    {t('branding.preview.poweredBy')}
                   </span>
                 </div>
                 <div className="flex flex-1 flex-col justify-center gap-2.5">
                   <span className="font-accent text-[9px] font-semibold uppercase tracking-[2px]" style={{ color: primary }}>
-                    Running gait analysis
+                    {t('branding.preview.eyebrow')}
                   </span>
                   <span className="text-[26px] font-extrabold leading-[1.05] tracking-[-.5px]">
-                    Let’s analyze
-                    <br />
-                    your run.
+                    {t('branding.preview.title')}
                   </span>
                   <div className="mt-1.5 h-[34px] rounded-lg" style={{ border: '1.5px solid #eee' }} />
                   <div className="h-[34px] rounded-lg" style={{ border: `1.5px solid ${accent}` }} />
@@ -236,14 +235,14 @@ export default function BrandingSettings() {
                     className="mt-1 flex h-[38px] items-center justify-center rounded-lg text-sm font-bold text-white"
                     style={{ background: primary }}
                   >
-                    Start →
+                    {t('branding.preview.start')}
                   </div>
                 </div>
               </div>
             </div>
           </div>
           <span className="text-xs" style={{ color: '#9a9a9a' }}>
-            Changes apply to all outlet kiosks on publish.
+            {t('branding.previewApply')}
           </span>
         </Panel>
       </div>
@@ -261,10 +260,11 @@ function Panel({ title, children }: { title?: string; children: React.ReactNode 
 }
 
 function Swatch({ color, selected, onClick }: { color: string; selected: boolean; onClick: () => void }) {
+  const { t } = useTranslation('partner');
   return (
     <button
       type="button"
-      aria-label={`Use ${color}`}
+      aria-label={t('branding.useColor', { color })}
       aria-pressed={selected}
       onClick={onClick}
       className="rounded-[10px]"
@@ -275,14 +275,15 @@ function Swatch({ color, selected, onClick }: { color: string; selected: boolean
 
 // Native color picker for a fully custom brand color (backend validates hex).
 function ColorInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { t } = useTranslation('partner');
   return (
     <label
       className="flex h-[38px] w-[38px] cursor-pointer items-center justify-center rounded-[10px]"
       style={{ border: '1px dashed #cfcfcf', background: '#fafafa' }}
-      title="Custom color"
+      title={t('branding.customColor')}
     >
       <Palette size={15} style={{ color: '#9a9a9a' }} />
-      <input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="sr-only" aria-label="Custom color" />
+      <input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="sr-only" aria-label={t('branding.customColor')} />
     </label>
   );
 }

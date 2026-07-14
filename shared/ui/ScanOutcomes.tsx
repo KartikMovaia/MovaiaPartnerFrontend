@@ -2,6 +2,7 @@
 // window. The denominator is completed + failed + processing (PENDING is excluded
 // upstream), so the three shares always sum to 100%. Shared by the partner and
 // Movaia-admin dashboards so the metric reads identically on both.
+import { useTranslation } from 'react-i18next';
 import { fmtNum } from './format';
 
 export interface Funnel {
@@ -12,17 +13,18 @@ export interface Funnel {
 }
 
 export default function ScanOutcomes({ funnel, label }: { funnel: Funnel; label: string }) {
+  const { t } = useTranslation('partner');
   const total = funnel.completed + funnel.failed + funnel.processing;
   const pct = (n: number) => (total ? ((n / total) * 100).toFixed(1) : '0.0');
   const stats = [
-    { key: 'completed', label: 'Completion rate', value: `${pct(funnel.completed)}%`, sub: `${fmtNum(funnel.completed)} of ${fmtNum(total)} completed`, color: '#ABD037' },
-    { key: 'failed', label: 'Failure rate', value: `${pct(funnel.failed)}%`, sub: `${fmtNum(funnel.failed)} failed`, color: '#df3f40' },
-    { key: 'processing', label: 'Processing', value: fmtNum(funnel.processing), sub: 'still in progress', color: '#f59e0c' },
+    { key: 'completed', label: t('scanOutcomes.completionRate'), value: `${pct(funnel.completed)}%`, sub: t('scanOutcomes.completedOf', { completed: fmtNum(funnel.completed), total: fmtNum(total) }), color: '#ABD037' },
+    { key: 'failed', label: t('scanOutcomes.failureRate'), value: `${pct(funnel.failed)}%`, sub: t('scanOutcomes.failedCount', { failed: fmtNum(funnel.failed) }), color: '#df3f40' },
+    { key: 'processing', label: t('scanOutcomes.processing'), value: fmtNum(funnel.processing), sub: t('scanOutcomes.inProgress'), color: '#f59e0c' },
   ];
   return (
     <div className="flex flex-col gap-3.5 rounded-[14px] p-5" style={{ background: '#fff', border: '1px solid #ececec' }}>
       <div className="flex items-center justify-between">
-        <b className="text-[15px]">Scan outcomes</b>
+        <b className="text-[15px]">{t('scanOutcomes.title')}</b>
         <span className="text-xs" style={{ color: '#686868' }}>
           {label}
         </span>

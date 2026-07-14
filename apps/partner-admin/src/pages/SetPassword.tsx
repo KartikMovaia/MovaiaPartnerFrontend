@@ -3,10 +3,13 @@
 // so the must-change flag clears, then routes to the partner dashboard.
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@shared/contexts/AuthContext';
 import { partnerAuthService } from '@shared/services/partnerAuth.service';
+import i18n from '@shared/i18n';
 
 export default function SetPassword() {
+  const { t } = useTranslation('partner');
   const { refresh } = useAuth();
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
@@ -17,11 +20,11 @@ export default function SetPassword() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password.length < 8) {
-      setError('Use at least 8 characters.');
+      setError(t('setPassword.errors.tooShort'));
       return;
     }
     if (password !== confirm) {
-      setError('Passwords don’t match.');
+      setError(t('setPassword.errors.mismatch'));
       return;
     }
     setBusy(true);
@@ -47,15 +50,14 @@ export default function SetPassword() {
         <img src="/assets/movaia-logo.png" alt="Movaia" style={{ height: 26 }} className="self-start" />
 
         <div className="flex flex-col gap-2">
-          <h1 className="text-[26px] font-extrabold tracking-[-.5px]">Set your password</h1>
+          <h1 className="text-[26px] font-extrabold tracking-[-.5px]">{t('setPassword.title')}</h1>
           <p className="text-sm leading-[1.5]" style={{ color: '#686868' }}>
-            Choose a new password to finish signing in. Use at least 8 characters with an
-            uppercase letter, a lowercase letter, a number, and a symbol (!@#$%^&amp;*).
+            {t('setPassword.desc')}
           </p>
         </div>
 
-        <PasswordField label="New password" value={password} onChange={setPassword} />
-        <PasswordField label="Confirm password" value={confirm} onChange={setConfirm} />
+        <PasswordField label={t('setPassword.newPassword')} value={password} onChange={setPassword} />
+        <PasswordField label={t('setPassword.confirmPassword')} value={confirm} onChange={setConfirm} />
 
         {error && <p className="text-[13px] text-red-600">{error}</p>}
 
@@ -65,7 +67,7 @@ export default function SetPassword() {
           className="h-[54px] rounded-xl text-base font-bold disabled:opacity-60"
           style={{ background: '#ABD037', color: '#1c2b00' }}
         >
-          {busy ? 'Saving…' : 'Save & continue'}
+          {busy ? t('setPassword.saving') : t('setPassword.saveContinue')}
         </button>
       </form>
     </div>
@@ -86,8 +88,8 @@ function setPasswordErrorMessage(err: unknown): string {
     const msgs = Object.values(fieldErrors).flat().filter(Boolean);
     if (msgs.length) return msgs.join(' ');
   }
-  if (!e?.response) return 'Can’t reach the server. Check your connection and try again.';
-  return e.response.data?.error || 'Could not set password. Try again.';
+  if (!e?.response) return i18n.t('partner:setPassword.errors.network');
+  return e.response.data?.error || i18n.t('partner:setPassword.errors.generic');
 }
 
 function PasswordField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {

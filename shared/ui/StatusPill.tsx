@@ -1,6 +1,8 @@
 // Status chip used in scan tables and partner/branch rows.
 // Handles scan statuses (Completed / Processing / Failed / Pending) and
 // entity statuses (Active / Onboarding / Paused / Inactive).
+import { useTranslation } from 'react-i18next';
+
 type Tone = 'done' | 'proc' | 'fail' | 'neutral';
 
 const TONES: Record<Tone, { bg: string; text: string; dot: string }> = {
@@ -29,8 +31,11 @@ export default function StatusPill({
   label?: string;
   size?: 'sm' | 'md';
 }) {
+  const { t } = useTranslation('common');
   const tone = TONES[toneFor(status)];
   const sm = size === 'sm';
+  // Localized status name (falls back to Title Case for any unmapped status).
+  const text = label ?? t(`status.${status.toLowerCase()}`, { defaultValue: titleCase(status) });
   return (
     <span
       className="inline-flex items-center rounded-full font-semibold"
@@ -43,7 +48,7 @@ export default function StatusPill({
       }}
     >
       <span style={{ width: sm ? 5 : 6, height: sm ? 5 : 6, borderRadius: '50%', background: tone.dot }} />
-      {label ?? titleCase(status)}
+      {text}
     </span>
   );
 }

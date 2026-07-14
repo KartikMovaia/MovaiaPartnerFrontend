@@ -6,6 +6,7 @@
 // (default: all time); the recent-scans table always shows the latest activity.
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { LayoutGrid, Store, Palette, ScrollText } from 'lucide-react';
 import AdminShell, { NavItem, shellUserFromStaff } from '@shared/ui/AdminShell';
 import StatCard from '@shared/ui/StatCard';
@@ -28,6 +29,7 @@ function reportFlag(s: ScanRow): 'sent' | 'pending' | 'none' {
 }
 
 export default function AnalyticsDashboard() {
+  const { t } = useTranslation('partner');
   const { staff, logout } = useAuth();
   const isOutlet = staff?.role === 'OUTLET_ADMIN';
 
@@ -60,22 +62,22 @@ export default function AnalyticsDashboard() {
 
   const nav: NavItem[] = isOutlet
     ? [
-        { icon: <LayoutGrid size={16} />, label: 'Dashboard', to: '/partner', active: true },
-        { icon: <ScrollText size={16} />, label: 'Scans', to: '/partner/scans' },
+        { icon: <LayoutGrid size={16} />, label: t('nav.dashboard'), to: '/partner', active: true },
+        { icon: <ScrollText size={16} />, label: t('nav.scans'), to: '/partner/scans' },
       ]
     : [
-        { icon: <LayoutGrid size={16} />, label: 'Dashboard', to: '/partner', active: true },
-        { icon: <ScrollText size={16} />, label: 'Scans', to: '/partner/scans' },
-        { icon: <Store size={16} />, label: 'Branches', to: '/partner/stores' },
-        { icon: <Palette size={16} />, label: 'Branding', to: '/partner/branding' },
+        { icon: <LayoutGrid size={16} />, label: t('nav.dashboard'), to: '/partner', active: true },
+        { icon: <ScrollText size={16} />, label: t('nav.scans'), to: '/partner/scans' },
+        { icon: <Store size={16} />, label: t('nav.branches'), to: '/partner/stores' },
+        { icon: <Palette size={16} />, label: t('nav.branding'), to: '/partner/branding' },
       ];
 
   return (
     <AdminShell variant="partner" nav={nav} user={shellUserFromStaff(staff)} onSignOut={logout}>
       {error ? (
-        <ErrorState message="Couldn’t load your dashboard." onRetry={retry} />
+        <ErrorState message={t('dashboard.loadError')} onRetry={retry} />
       ) : isOutlet ? (
-        <OutletView data={data} scans={scans} storeName={staff?.storeName ?? 'Your branch'} range={range} onRangeChange={setRange} />
+        <OutletView data={data} scans={scans} storeName={staff?.storeName ?? t('dashboard.yourBranch')} range={range} onRangeChange={setRange} />
       ) : (
         <PartnerView data={data} scans={scans} slug={staff?.partnerSlug} range={range} onRangeChange={setRange} />
       )}
@@ -97,6 +99,7 @@ function PartnerView({
   range: DateRange;
   onRangeChange: (r: DateRange) => void;
 }) {
+  const { t } = useTranslation('partner');
   const byStore = (data?.byStore ?? []).filter((s) => s.storeId);
   const topOutlets = [...byStore].sort((a, b) => b.scans - a.scans).slice(0, 5);
   const activeOutlets = byStore.length;
@@ -113,9 +116,9 @@ function PartnerView({
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3.5">
         <div>
-          <h1 className="mb-1 text-2xl font-extrabold tracking-[-.4px]">Overview</h1>
+          <h1 className="mb-1 text-2xl font-extrabold tracking-[-.4px]">{t('dashboard.overview')}</h1>
           <p className="text-[13px]" style={{ color: '#686868' }}>
-            {activeOutlets} active outlets · updated just now
+            {t('dashboard.activeOutlets', { count: activeOutlets })}
             {slug && (
               <>
                 {' · '}
@@ -129,10 +132,10 @@ function PartnerView({
 
       {/* KPIs */}
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total analyses" value={fmtNum(total)} sub={label} />
-        <StatCard label="Reports sent" value={fmtNum(reports)} sub={`${delivery}% delivery`} />
-        <StatCard label="Active outlets" value={String(activeOutlets)} sub="with scans" />
-        <StatCard label="Avg / week" value={String(perWeek)} sub={label} />
+        <StatCard label={t('dashboard.kpi.totalAnalyses')} value={fmtNum(total)} sub={label} />
+        <StatCard label={t('dashboard.kpi.reportsSent')} value={fmtNum(reports)} sub={t('dashboard.kpi.delivery', { pct: delivery })} />
+        <StatCard label={t('dashboard.kpi.activeOutlets')} value={String(activeOutlets)} sub={t('dashboard.kpi.withScans')} />
+        <StatCard label={t('dashboard.kpi.avgWeek')} value={String(perWeek)} sub={label} />
       </div>
 
       {/* Scan outcomes */}
@@ -142,21 +145,21 @@ function PartnerView({
       <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-[1.6fr_1fr]">
         <Card>
           <div className="flex items-center justify-between">
-            <b className="text-[15px]">Analyses over time</b>
+            <b className="text-[15px]">{t('dashboard.analysesOverTime')}</b>
             <span className="text-xs" style={{ color: '#686868' }}>
               {label}
             </span>
           </div>
-          <AreaChart id="pg" data={trend.map((t) => t.scans)} labels={trend.map((t) => t.label)} xTitle="Period" />
+          <AreaChart id="pg" data={trend.map((t) => t.scans)} labels={trend.map((t) => t.label)} xTitle={t('dashboard.period')} />
         </Card>
         <Card>
-          <b className="text-[15px]">By outlet</b>
+          <b className="text-[15px]">{t('dashboard.byOutlet')}</b>
           <BarList items={topOutlets.map((s) => ({ label: s.storeName ?? '—', value: s.scans }))} />
         </Card>
       </div>
 
       {/* Recent scans */}
-      <ScansTable scans={scans} showOutlet title="Recent scans" viewAllTo="/partner/scans" />
+      <ScansTable scans={scans} showOutlet title={t('dashboard.recentScans')} viewAllTo="/partner/scans" />
     </>
   );
 }
@@ -175,6 +178,7 @@ function OutletView({
   range: DateRange;
   onRangeChange: (r: DateRange) => void;
 }) {
+  const { t } = useTranslation('partner');
   const total = data?.totals.scans ?? 0;
   const reports = data?.totals.reportsSent ?? 0;
   const delivery = total ? ((reports / total) * 100).toFixed(1) : '0.0';
@@ -189,28 +193,28 @@ function OutletView({
         className="flex flex-wrap items-center gap-2.5 rounded-[10px] px-3.5 py-2.5 text-[12.5px]"
         style={{ background: '#eef4f4', border: '1px solid #d5e8e8', color: '#0b6e6e' }}
       >
-        <span className="font-bold">{storeName} only</span>
-        <span style={{ color: '#4a8f8f' }}>· you see data for your branch. Other outlets are hidden.</span>
+        <span className="font-bold">{t('dashboard.bannerName', { store: storeName })}</span>
+        <span style={{ color: '#4a8f8f' }}>{t('dashboard.bannerNote')}</span>
       </div>
 
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3.5">
-        <h1 className="text-[22px] font-extrabold tracking-[-.4px]">{storeName} overview</h1>
+        <h1 className="text-[22px] font-extrabold tracking-[-.4px]">{t('dashboard.outletOverview', { store: storeName })}</h1>
         <DateRangePicker value={range} onChange={onRangeChange} />
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
-        <StatCard label="Total analyses" value={fmtNum(total)} sub={label} />
-        <StatCard label="Reports sent" value={fmtNum(reports)} sub={`${delivery}%`} />
-        <StatCard label="Avg / week" value={String(perWeek)} sub={label} />
+        <StatCard label={t('dashboard.kpi.totalAnalyses')} value={fmtNum(total)} sub={label} />
+        <StatCard label={t('dashboard.kpi.reportsSent')} value={fmtNum(reports)} sub={t('dashboard.kpi.deliveryShort', { pct: delivery })} />
+        <StatCard label={t('dashboard.kpi.avgWeek')} value={String(perWeek)} sub={label} />
       </div>
 
       {/* Scan outcomes (scoped) */}
       <ScanOutcomes funnel={funnel} label={label} />
 
       {/* Recent scans (scoped) */}
-      <ScansTable scans={scans} showOutlet={false} title={`Recent scans · ${storeName}`} viewAllTo="/partner/scans" />
+      <ScansTable scans={scans} showOutlet={false} title={t('dashboard.recentScansScoped', { store: storeName })} viewAllTo="/partner/scans" />
     </>
   );
 }
@@ -235,6 +239,7 @@ function ScansTable({
   title: string;
   viewAllTo?: string;
 }) {
+  const { t } = useTranslation('partner');
   const cols = showOutlet ? '1.1fr 1fr 1.6fr 1fr 1fr' : '1fr 1.8fr 1fr 1fr';
   const rows = scans ?? [];
   return (
@@ -243,7 +248,7 @@ function ScansTable({
         <b className="text-[15px]">{title}</b>
         {viewAllTo && (
           <Link to={viewAllTo} className="text-xs font-semibold" style={{ color: '#7a9e1f' }}>
-            View all →
+            {t('dashboard.viewAll')}
           </Link>
         )}
       </div>
@@ -254,11 +259,11 @@ function ScansTable({
             className="grid px-5 py-2.5 text-[11px] font-bold uppercase tracking-[.5px]"
             style={{ gridTemplateColumns: cols, color: '#9a9a9a', background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}
           >
-            <span>Date</span>
-            {showOutlet && <span>Outlet</span>}
-            <span>Customer</span>
-            <span>Status</span>
-            <span>Report</span>
+            <span>{t('dashboard.table.date')}</span>
+            {showOutlet && <span>{t('dashboard.table.outlet')}</span>}
+            <span>{t('dashboard.table.customer')}</span>
+            <span>{t('dashboard.table.status')}</span>
+            <span>{t('dashboard.table.report')}</span>
           </div>
           {/* Rows */}
           {rows.map((s, i) => (
@@ -280,12 +285,12 @@ function ScansTable({
           ))}
           {scans === null && (
             <div className="px-5 py-6 text-[13px]" style={{ color: '#9a9a9a' }}>
-              Loading scans…
+              {t('dashboard.loadingScans')}
             </div>
           )}
           {scans !== null && rows.length === 0 && (
             <div className="px-5 py-6 text-[13px]" style={{ color: '#9a9a9a' }}>
-              No scans yet.
+              {t('dashboard.noScans')}
             </div>
           )}
         </div>

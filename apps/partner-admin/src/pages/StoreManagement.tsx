@@ -3,6 +3,7 @@
 // outlet admin (first name, last name, email); an existing unassigned branch can
 // be assigned inline. Each row toggles active/paused live via the mock service.
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LayoutGrid, Store, Palette, ScrollText } from 'lucide-react';
 import AdminShell, { NavItem, shellUserFromStaff } from '@shared/ui/AdminShell';
 import { useAuth } from '@shared/contexts/AuthContext';
@@ -14,13 +15,6 @@ import ErrorState from '@shared/components/ErrorState';
 import { fmtNum } from '@shared/ui/format';
 import { storeService, type Store as Branch } from '@shared/services/partner.service';
 import { apiError } from '@shared/services/apiError';
-
-const NAV: NavItem[] = [
-  { icon: <LayoutGrid size={16} />, label: 'Dashboard', to: '/partner' },
-  { icon: <ScrollText size={16} />, label: 'Scans', to: '/partner/scans' },
-  { icon: <Store size={16} />, label: 'Branches', to: '/partner/stores', active: true },
-  { icon: <Palette size={16} />, label: 'Branding', to: '/partner/branding' },
-];
 
 const COLS = '1.4fr 1.6fr 1fr .8fr .6fr';
 const emptyBranch = { name: '', location: '', firstName: '', lastName: '', email: '' };
@@ -60,9 +54,16 @@ function Field({
 }
 
 export default function StoreManagement() {
+  const { t } = useTranslation('partner');
   const { staff, logout } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
+  const NAV: NavItem[] = [
+    { icon: <LayoutGrid size={16} />, label: t('nav.dashboard'), to: '/partner' },
+    { icon: <ScrollText size={16} />, label: t('nav.scans'), to: '/partner/scans' },
+    { icon: <Store size={16} />, label: t('nav.branches'), to: '/partner/stores', active: true },
+    { icon: <Palette size={16} />, label: t('nav.branding'), to: '/partner/branding' },
+  ];
   const [stores, setStores] = useState<Branch[] | null>(null);
   const [error, setError] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -88,7 +89,7 @@ export default function StoreManagement() {
       await storeService.update(s.id, { isActive: next });
     } catch (err) {
       setStores((cur) => cur?.map((x) => (x.id === s.id ? { ...x, isActive: !next } : x)) ?? cur);
-      toast(apiError(err, 'Couldn’t update the branch.'), 'error');
+      toast(apiError(err, t('stores.toasts.toggleError')), 'error');
     }
   };
 
@@ -100,13 +101,13 @@ export default function StoreManagement() {
       const created = await storeService.create({ name: form.name.trim(), location: form.location.trim() || undefined });
       const admin = { email: form.email.trim(), firstName: form.firstName.trim(), lastName: form.lastName.trim() };
       const { tempPassword } = await storeService.provisionOutletAdmin({ storeId: created.id, ...admin });
-      toast(`${created.name} added — invite sent to ${admin.email}.`, 'success');
-      setNotice(`If the invite email doesn’t arrive, share this one-time temp password with ${admin.email}: ${tempPassword}`);
+      toast(t('stores.toasts.added', { store: created.name, email: admin.email }), 'success');
+      setNotice(t('stores.toasts.tempPassword', { email: admin.email, password: tempPassword }));
       setForm(emptyBranch);
       setAdding(false);
       load();
     } catch (err) {
-      toast(apiError(err, 'Couldn’t add the branch.'), 'error');
+      toast(apiError(err, t('stores.toasts.addError')), 'error');
     } finally {
       setBusy(false);
     }
@@ -126,12 +127,12 @@ export default function StoreManagement() {
     try {
       const admin = { email: assignForm.email.trim(), firstName: assignForm.firstName.trim(), lastName: assignForm.lastName.trim() };
       const { tempPassword } = await storeService.provisionOutletAdmin({ storeId: assigningId, ...admin });
-      toast(`Outlet admin ${admin.email} invited.`, 'success');
-      setNotice(`If the invite email doesn’t arrive, share this one-time temp password with ${admin.email}: ${tempPassword}`);
+      toast(t('stores.toasts.adminInvited', { email: admin.email }), 'success');
+      setNotice(t('stores.toasts.tempPassword', { email: admin.email, password: tempPassword }));
       setAssigningId(null);
       load();
     } catch (err) {
-      toast(apiError(err, 'Couldn’t provision the outlet admin.'), 'error');
+      toast(apiError(err, t('stores.toasts.provisionError')), 'error');
     } finally {
       setBusy(false);
     }
@@ -150,11 +151,11 @@ export default function StoreManagement() {
     setBusy(true);
     try {
       await storeService.update(editingId, { name: editForm.name.trim(), location: editForm.location.trim() });
-      toast('Branch updated.', 'success');
+      toast(t('stores.toasts.branchUpdated'), 'success');
       setEditingId(null);
       load();
     } catch (err) {
-      toast(apiError(err, 'Couldn’t update the branch.'), 'error');
+      toast(apiError(err, t('stores.toasts.updateError')), 'error');
     } finally {
       setBusy(false);
     }
@@ -163,25 +164,25 @@ export default function StoreManagement() {
   const resendInvite = async (admin: NonNullable<Branch['outletAdmin']>) => {
     try {
       await storeService.resendOutletInvite(admin.id);
-      toast(`Invite re-sent to ${admin.email}.`, 'success');
+      toast(t('stores.toasts.inviteResent', { email: admin.email }), 'success');
     } catch (err) {
-      toast(apiError(err, 'Couldn’t resend the invite.'), 'error');
+      toast(apiError(err, t('stores.toasts.resendError')), 'error');
     }
   };
 
   const resetAdmin = async (admin: NonNullable<Branch['outletAdmin']>) => {
     const ok = await confirm({
-      title: `Reset ${admin.email}?`,
-      message: 'Generates a new temporary password and re-sends the setup email. Their current password stops working.',
-      confirmLabel: 'Reset password',
+      title: t('stores.confirm.resetTitle', { email: admin.email }),
+      message: t('stores.confirm.resetMessage'),
+      confirmLabel: t('stores.confirm.resetConfirm'),
     });
     if (!ok) return;
     try {
       const { tempPassword } = await storeService.resetOutletAdmin(admin.id);
-      toast(`Password reset — invite re-sent to ${admin.email}.`, 'success');
-      setNotice(`If the email doesn’t arrive, share this one-time temp password with ${admin.email}: ${tempPassword}`);
+      toast(t('stores.toasts.passwordReset', { email: admin.email }), 'success');
+      setNotice(t('stores.toasts.resetTempPassword', { email: admin.email, password: tempPassword }));
     } catch (err) {
-      toast(apiError(err, 'Couldn’t reset the password.'), 'error');
+      toast(apiError(err, t('stores.toasts.resetError')), 'error');
     }
   };
 
@@ -189,18 +190,18 @@ export default function StoreManagement() {
     const admin = s.outletAdmin;
     if (!admin) return;
     const ok = await confirm({
-      title: `Remove ${admin.email}?`,
-      message: `They’ll lose access to ${s.name}. You can assign a new admin afterward.`,
-      confirmLabel: 'Remove',
+      title: t('stores.confirm.removeTitle', { email: admin.email }),
+      message: t('stores.confirm.removeMessage', { store: s.name }),
+      confirmLabel: t('stores.confirm.removeConfirm'),
       danger: true,
     });
     if (!ok) return;
     try {
       await storeService.removeOutletAdmin(admin.id);
-      toast('Outlet admin removed.', 'success');
+      toast(t('stores.toasts.adminRemoved'), 'success');
       load();
     } catch (err) {
-      toast(apiError(err, 'Couldn’t remove the outlet admin.'), 'error');
+      toast(apiError(err, t('stores.toasts.removeError')), 'error');
     }
   };
 
@@ -211,15 +212,15 @@ export default function StoreManagement() {
   return (
     <AdminShell variant="partner" nav={NAV} user={shellUserFromStaff(staff)} onSignOut={logout}>
       {error ? (
-        <ErrorState message="Couldn’t load branches." onRetry={load} />
+        <ErrorState message={t('stores.loadError')} onRetry={load} />
       ) : (
         <>
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="mb-1 text-[22px] font-extrabold tracking-[-.4px]">Branches</h1>
+          <h1 className="mb-1 text-[22px] font-extrabold tracking-[-.4px]">{t('stores.title')}</h1>
           <p className="text-[13px]" style={{ color: '#686868' }}>
-            {total} branches · {active} active
+            {t('stores.summary', { total, active })}
           </p>
         </div>
         <button
@@ -231,7 +232,7 @@ export default function StoreManagement() {
           className="h-[42px] rounded-[10px] px-5 text-sm font-bold"
           style={{ background: '#ABD037', color: '#1c2b00' }}
         >
-          + Add branch
+          {t('stores.addBranch')}
         </button>
       </div>
 
@@ -252,18 +253,18 @@ export default function StoreManagement() {
           className="flex flex-col gap-3.5 rounded-[14px] p-[18px]"
           style={{ background: '#fff', border: '1px solid #ececec' }}
         >
-          <b className="text-[15px]">New branch</b>
+          <b className="text-[15px]">{t('stores.newBranch')}</b>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Branch name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} required />
-            <Field label="Location" value={form.location} onChange={(v) => setForm({ ...form, location: v })} />
+            <Field label={t('stores.branchName')} value={form.name} onChange={(v) => setForm({ ...form, name: v })} required />
+            <Field label={t('stores.location')} value={form.location} onChange={(v) => setForm({ ...form, location: v })} />
           </div>
           <div className="mt-1 text-[11px] font-bold uppercase tracking-[.5px]" style={{ color: '#9a9a9a' }}>
-            Outlet admin
+            {t('stores.outletAdmin')}
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Field label="First name" value={form.firstName} onChange={(v) => setForm({ ...form, firstName: v })} required />
-            <Field label="Last name" value={form.lastName} onChange={(v) => setForm({ ...form, lastName: v })} required />
-            <Field label="Work email" type="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required accent />
+            <Field label={t('stores.firstName')} value={form.firstName} onChange={(v) => setForm({ ...form, firstName: v })} required />
+            <Field label={t('stores.lastName')} value={form.lastName} onChange={(v) => setForm({ ...form, lastName: v })} required />
+            <Field label={t('stores.workEmail')} type="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} required accent />
           </div>
           <div className="flex justify-end gap-2.5">
             <button
@@ -275,7 +276,7 @@ export default function StoreManagement() {
               className="h-10 rounded-[10px] px-4 text-[13px] font-semibold"
               style={{ color: '#686868', border: '1px solid #e4e4e4' }}
             >
-              Cancel
+              {t('stores.cancel')}
             </button>
             <button
               type="submit"
@@ -283,7 +284,7 @@ export default function StoreManagement() {
               className="h-10 rounded-[10px] px-5 text-[13px] font-bold disabled:opacity-60"
               style={{ background: '#141414', color: '#fff' }}
             >
-              {busy ? 'Adding…' : 'Add branch & invite admin'}
+              {busy ? t('stores.adding') : t('stores.addBranchInvite')}
             </button>
           </div>
         </form>
@@ -296,11 +297,11 @@ export default function StoreManagement() {
           className="flex flex-col gap-3.5 rounded-[14px] p-[18px]"
           style={{ background: '#fff', border: '1px solid #ececec' }}
         >
-          <b className="text-[15px]">Assign outlet admin{assignBranch ? ` · ${assignBranch}` : ''}</b>
+          <b className="text-[15px]">{assignBranch ? t('stores.assignTitleNamed', { store: assignBranch }) : t('stores.assignTitle')}</b>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Field label="First name" value={assignForm.firstName} onChange={(v) => setAssignForm({ ...assignForm, firstName: v })} required />
-            <Field label="Last name" value={assignForm.lastName} onChange={(v) => setAssignForm({ ...assignForm, lastName: v })} required />
-            <Field label="Work email" type="email" value={assignForm.email} onChange={(v) => setAssignForm({ ...assignForm, email: v })} required accent />
+            <Field label={t('stores.firstName')} value={assignForm.firstName} onChange={(v) => setAssignForm({ ...assignForm, firstName: v })} required />
+            <Field label={t('stores.lastName')} value={assignForm.lastName} onChange={(v) => setAssignForm({ ...assignForm, lastName: v })} required />
+            <Field label={t('stores.workEmail')} type="email" value={assignForm.email} onChange={(v) => setAssignForm({ ...assignForm, email: v })} required accent />
           </div>
           <div className="flex justify-end gap-2.5">
             <button
@@ -309,7 +310,7 @@ export default function StoreManagement() {
               className="h-10 rounded-[10px] px-4 text-[13px] font-semibold"
               style={{ color: '#686868', border: '1px solid #e4e4e4' }}
             >
-              Cancel
+              {t('stores.cancel')}
             </button>
             <button
               type="submit"
@@ -317,7 +318,7 @@ export default function StoreManagement() {
               className="h-10 rounded-[10px] px-5 text-[13px] font-bold disabled:opacity-60"
               style={{ background: '#141414', color: '#fff' }}
             >
-              {busy ? 'Provisioning…' : 'Provision admin'}
+              {busy ? t('stores.provisioning') : t('stores.provisionAdmin')}
             </button>
           </div>
         </form>
@@ -330,10 +331,10 @@ export default function StoreManagement() {
           className="flex flex-col gap-3.5 rounded-[14px] p-[18px]"
           style={{ background: '#fff', border: '1px solid #ececec' }}
         >
-          <b className="text-[15px]">Edit branch</b>
+          <b className="text-[15px]">{t('stores.editBranch')}</b>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Branch name" value={editForm.name} onChange={(v) => setEditForm({ ...editForm, name: v })} required />
-            <Field label="Location" value={editForm.location} onChange={(v) => setEditForm({ ...editForm, location: v })} />
+            <Field label={t('stores.branchName')} value={editForm.name} onChange={(v) => setEditForm({ ...editForm, name: v })} required />
+            <Field label={t('stores.location')} value={editForm.location} onChange={(v) => setEditForm({ ...editForm, location: v })} />
           </div>
           <div className="flex justify-end gap-2.5">
             <button
@@ -342,7 +343,7 @@ export default function StoreManagement() {
               className="h-10 rounded-[10px] px-4 text-[13px] font-semibold"
               style={{ color: '#686868', border: '1px solid #e4e4e4' }}
             >
-              Cancel
+              {t('stores.cancel')}
             </button>
             <button
               type="submit"
@@ -350,7 +351,7 @@ export default function StoreManagement() {
               className="h-10 rounded-[10px] px-5 text-[13px] font-bold disabled:opacity-60"
               style={{ background: '#141414', color: '#fff' }}
             >
-              {busy ? 'Saving…' : 'Save branch'}
+              {busy ? t('stores.saving') : t('stores.saveBranch')}
             </button>
           </div>
         </form>
@@ -364,16 +365,16 @@ export default function StoreManagement() {
               className="grid px-5 py-[11px] text-[11px] font-bold uppercase tracking-[.5px]"
               style={{ gridTemplateColumns: COLS, color: '#9a9a9a', background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}
             >
-              <span>Branch</span>
-              <span>Outlet admin</span>
-              <span>Scans</span>
-              <span>Status</span>
+              <span>{t('stores.table.branch')}</span>
+              <span>{t('stores.table.outletAdmin')}</span>
+              <span>{t('stores.table.scans')}</span>
+              <span>{t('stores.table.status')}</span>
               <span />
             </div>
 
             {stores === null && (
               <div className="px-5 py-6 text-[13px]" style={{ color: '#9a9a9a' }}>
-                Loading branches…
+                {t('stores.loading')}
               </div>
             )}
 
@@ -395,7 +396,7 @@ export default function StoreManagement() {
                     className="text-[11px] font-semibold"
                     style={{ color: '#7a9e1f' }}
                   >
-                    Edit
+                    {t('stores.edit')}
                   </button>
                 </span>
                 <span>
@@ -406,36 +407,36 @@ export default function StoreManagement() {
                       </span>
                       <span className="flex flex-wrap gap-2.5 text-[11px] font-semibold">
                         <button type="button" onClick={() => resendInvite(s.outletAdmin!)} style={{ color: '#7a9e1f' }}>
-                          Resend
+                          {t('stores.resend')}
                         </button>
                         <button type="button" onClick={() => resetAdmin(s.outletAdmin!)} style={{ color: '#7a9e1f' }}>
-                          Reset
+                          {t('stores.reset')}
                         </button>
                         <button type="button" onClick={() => removeAdmin(s)} style={{ color: '#b23a34' }}>
-                          Remove
+                          {t('stores.remove')}
                         </button>
                       </span>
                     </span>
                   ) : (
                     <span className="italic" style={{ color: '#9a9a9a' }}>
-                      Unassigned ·{' '}
+                      {t('stores.unassigned')} ·{' '}
                       <button
                         type="button"
                         onClick={() => openAssign(s.id)}
                         className="font-semibold not-italic"
                         style={{ color: '#7a9e1f' }}
                       >
-                        Assign
+                        {t('stores.assign')}
                       </button>
                     </span>
                   )}
                 </span>
                 <span>{fmtNum(s.scans)}</span>
                 <span>
-                  <StatusPill status={s.isActive ? 'ACTIVE' : 'PAUSED'} label={s.isActive ? 'Active' : 'Paused'} />
+                  <StatusPill status={s.isActive ? 'ACTIVE' : 'PAUSED'} />
                 </span>
                 <span className="flex justify-end">
-                  <Toggle on={s.isActive} onChange={(next) => toggle(s, next)} aria-label={`Toggle ${s.name}`} />
+                  <Toggle on={s.isActive} onChange={(next) => toggle(s, next)} aria-label={t('stores.toggleAria', { store: s.name })} />
                 </span>
               </div>
             ))}

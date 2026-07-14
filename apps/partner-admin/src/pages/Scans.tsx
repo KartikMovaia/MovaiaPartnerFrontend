@@ -5,6 +5,7 @@
 // "View all →" link. "Scan" = a submitted analysis; abandoned (PENDING) sessions
 // are excluded by the backend, matching the rest of analytics.
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LayoutGrid, Store, Palette, ScrollText, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import AdminShell, { NavItem, shellUserFromStaff } from '@shared/ui/AdminShell';
 import StatusPill from '@shared/ui/StatusPill';
@@ -23,11 +24,11 @@ const EXPORT_PAGE = 100; // backend max pageSize — fewer round-trips when expo
 const MAX_EXPORT = 5000; // safety cap so a huge history can't hang the browser
 
 // Statuses the backend accepts as a filter (PENDING isn't a "scan").
-const STATUS_OPTIONS: Array<{ value: '' | ScanStatus; label: string }> = [
-  { value: '', label: 'All statuses' },
-  { value: 'COMPLETED', label: 'Completed' },
-  { value: 'PROCESSING', label: 'Processing' },
-  { value: 'FAILED', label: 'Failed' },
+const STATUS_OPTIONS: Array<{ value: '' | ScanStatus; labelKey: string }> = [
+  { value: '', labelKey: 'scans.statusOptions.all' },
+  { value: 'COMPLETED', labelKey: 'scans.statusOptions.completed' },
+  { value: 'PROCESSING', labelKey: 'scans.statusOptions.processing' },
+  { value: 'FAILED', labelKey: 'scans.statusOptions.failed' },
 ];
 
 function reportFlag(s: ScanRow): 'sent' | 'pending' | 'none' {
@@ -37,6 +38,7 @@ function reportFlag(s: ScanRow): 'sent' | 'pending' | 'none' {
 }
 
 export default function Scans() {
+  const { t } = useTranslation('partner');
   const { staff, logout } = useAuth();
   const toast = useToast();
   const isOutlet = staff?.role === 'OUTLET_ADMIN';
@@ -125,16 +127,26 @@ export default function Scans() {
         if (p.items.length < EXPORT_PAGE) break; // last page reached
         pageNum++;
       }
-      downloadScansCsv(collected, !isOutlet);
+      const header = [
+        t('scans.csv.date'),
+        ...(!isOutlet ? [t('scans.csv.branch')] : []),
+        t('scans.csv.customerName'),
+        t('scans.csv.customerEmail'),
+        t('scans.csv.customerPhone'),
+        t('scans.csv.status'),
+        t('scans.csv.reportSentAt'),
+        t('scans.csv.analysisId'),
+      ];
+      downloadScansCsv(collected, !isOutlet, header);
       const truncated = totalCount > MAX_EXPORT;
       toast(
         truncated
-          ? `Exported the first ${collected.length} of ${fmtNum(totalCount)} scans (${MAX_EXPORT} max).`
-          : `Exported ${collected.length} scan${collected.length === 1 ? '' : 's'}.`,
+          ? t('scans.exportedTruncated', { count: collected.length, total: fmtNum(totalCount), max: MAX_EXPORT })
+          : t('scans.exported', { count: collected.length }),
         'success'
       );
     } catch {
-      toast('Couldn’t export scans. Please try again.', 'error');
+      toast(t('scans.exportError'), 'error');
     } finally {
       setExporting(false);
     }
@@ -142,14 +154,14 @@ export default function Scans() {
 
   const nav: NavItem[] = isOutlet
     ? [
-        { icon: <LayoutGrid size={16} />, label: 'Dashboard', to: '/partner' },
-        { icon: <ScrollText size={16} />, label: 'Scans', to: '/partner/scans', active: true },
+        { icon: <LayoutGrid size={16} />, label: t('nav.dashboard'), to: '/partner' },
+        { icon: <ScrollText size={16} />, label: t('nav.scans'), to: '/partner/scans', active: true },
       ]
     : [
-        { icon: <LayoutGrid size={16} />, label: 'Dashboard', to: '/partner' },
-        { icon: <ScrollText size={16} />, label: 'Scans', to: '/partner/scans', active: true },
-        { icon: <Store size={16} />, label: 'Branches', to: '/partner/stores' },
-        { icon: <Palette size={16} />, label: 'Branding', to: '/partner/branding' },
+        { icon: <LayoutGrid size={16} />, label: t('nav.dashboard'), to: '/partner' },
+        { icon: <ScrollText size={16} />, label: t('nav.scans'), to: '/partner/scans', active: true },
+        { icon: <Store size={16} />, label: t('nav.branches'), to: '/partner/stores' },
+        { icon: <Palette size={16} />, label: t('nav.branding'), to: '/partner/branding' },
       ];
 
   const total = data?.totalCount ?? 0;
@@ -166,9 +178,9 @@ export default function Scans() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3.5">
         <div>
-          <h1 className="mb-1 text-2xl font-extrabold tracking-[-.4px]">Scans</h1>
+          <h1 className="mb-1 text-2xl font-extrabold tracking-[-.4px]">{t('scans.title')}</h1>
           <p className="text-[13px]" style={{ color: '#686868' }}>
-            {isOutlet ? `${staff?.storeName ?? 'Your branch'} only · every submitted analysis` : 'Every submitted analysis across your branches'}
+            {isOutlet ? t('scans.subtitleOutlet', { store: staff?.storeName ?? t('dashboard.yourBranch') }) : t('scans.subtitlePartner')}
           </p>
         </div>
         <DateRangePicker value={range} onChange={onRange} />
@@ -180,8 +192,8 @@ export default function Scans() {
           className="flex flex-wrap items-center gap-2.5 rounded-[10px] px-3.5 py-2.5 text-[12.5px]"
           style={{ background: '#eef4f4', border: '1px solid #d5e8e8', color: '#0b6e6e' }}
         >
-          <span className="font-bold">{staff?.storeName ?? 'Your branch'} only</span>
-          <span style={{ color: '#4a8f8f' }}>· you see scans for your branch. Other outlets are hidden.</span>
+          <span className="font-bold">{t('scans.bannerName', { store: staff?.storeName ?? t('dashboard.yourBranch') })}</span>
+          <span style={{ color: '#4a8f8f' }}>{t('scans.bannerNote')}</span>
         </div>
       )}
 
@@ -191,14 +203,14 @@ export default function Scans() {
           type="search"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Search name, email, phone…"
-          aria-label="Search customers"
+          placeholder={t('scans.searchPlaceholder')}
+          aria-label={t('scans.searchAria')}
           className="h-9 w-56 rounded-[9px] border px-3 text-[13px] text-[#141414] outline-none focus:border-[#ABD037]"
           style={{ borderColor: '#e4e4e4', background: '#fff' }}
         />
         {!isOutlet && (
-          <Select value={storeId} onChange={onStore} aria-label="Filter by branch">
-            <option value="">All branches</option>
+          <Select value={storeId} onChange={onStore} aria-label={t('scans.filterBranchAria')}>
+            <option value="">{t('scans.allBranches')}</option>
             {branches.map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
@@ -206,10 +218,10 @@ export default function Scans() {
             ))}
           </Select>
         )}
-        <Select value={status} onChange={(v) => onStatus(v as '' | ScanStatus)} aria-label="Filter by status">
+        <Select value={status} onChange={(v) => onStatus(v as '' | ScanStatus)} aria-label={t('scans.filterStatusAria')}>
           {STATUS_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
-              {o.label}
+              {t(o.labelKey)}
             </option>
           ))}
         </Select>
@@ -220,22 +232,22 @@ export default function Scans() {
           className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-[9px] border px-3 text-[13px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
           style={{ borderColor: '#e4e4e4', background: '#fff', color: '#686868' }}
         >
-          <Download size={15} /> {exporting ? 'Exporting…' : 'Export CSV'}
+          <Download size={15} /> {exporting ? t('scans.exporting') : t('scans.exportCsv')}
         </button>
       </div>
 
       {/* Table */}
       {error ? (
-        <ErrorState message="Couldn’t load scans." onRetry={load} />
+        <ErrorState message={t('scans.loadError')} onRetry={load} />
       ) : (
         <div className="overflow-hidden rounded-[14px]" style={{ background: '#fff', border: '1px solid #ececec' }}>
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #f0f0f0' }}>
             <b className="text-[15px]">
-              {loading ? 'Loading…' : total === 0 ? 'No scans' : `${fmtNum(total)} scan${total === 1 ? '' : 's'}`}
+              {loading ? t('scans.loading') : total === 0 ? t('scans.noScans') : t('scans.count', { count: total })}
             </b>
             {total > 0 && (
               <span className="text-xs" style={{ color: '#9a9a9a' }}>
-                {firstRow}–{lastRow} of {fmtNum(total)}
+                {t('scans.rangeOf', { first: firstRow, last: lastRow, total: fmtNum(total) })}
               </span>
             )}
           </div>
@@ -246,11 +258,11 @@ export default function Scans() {
                 className="grid px-5 py-2.5 text-[11px] font-bold uppercase tracking-[.5px]"
                 style={{ gridTemplateColumns: cols, color: '#9a9a9a', background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}
               >
-                <span>Date</span>
-                {showOutlet && <span>Outlet</span>}
-                <span>Customer</span>
-                <span>Status</span>
-                <span>Report</span>
+                <span>{t('scans.table.date')}</span>
+                {showOutlet && <span>{t('scans.table.outlet')}</span>}
+                <span>{t('scans.table.customer')}</span>
+                <span>{t('scans.table.status')}</span>
+                <span>{t('scans.table.report')}</span>
               </div>
               {/* Rows */}
               {rows.map((s, i) => {
@@ -284,12 +296,12 @@ export default function Scans() {
               })}
               {loading && rows.length === 0 && (
                 <div className="px-5 py-6 text-[13px]" style={{ color: '#9a9a9a' }}>
-                  Loading scans…
+                  {t('scans.loadingRows')}
                 </div>
               )}
               {!loading && rows.length === 0 && (
                 <div className="px-5 py-6 text-[13px]" style={{ color: '#9a9a9a' }}>
-                  No scans match these filters.
+                  {t('scans.noMatch')}
                 </div>
               )}
             </div>
@@ -299,14 +311,14 @@ export default function Scans() {
           {total > 0 && (
             <div className="flex items-center justify-between px-5 py-3" style={{ borderTop: '1px solid #f0f0f0' }}>
               <span className="text-xs" style={{ color: '#9a9a9a' }}>
-                Page {page}
+                {t('scans.page', { page })}
               </span>
               <div className="flex items-center gap-2">
                 <PageButton disabled={!hasPrev} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                  <ChevronLeft size={15} /> Prev
+                  <ChevronLeft size={15} /> {t('scans.prev')}
                 </PageButton>
                 <PageButton disabled={!hasNext} onClick={() => setPage((p) => p + 1)}>
-                  Next <ChevronRight size={15} />
+                  {t('scans.next')} <ChevronRight size={15} />
                 </PageButton>
               </div>
             </div>
@@ -368,8 +380,7 @@ function csvCell(v: string | null | undefined): string {
 
 // Build a CSV from the rows and trigger a client-side download. A UTF-8 BOM keeps
 // accented names/emails intact when the file is opened in Excel.
-function downloadScansCsv(rows: ScanRow[], includeBranch: boolean): void {
-  const header = ['Date', ...(includeBranch ? ['Branch'] : []), 'Customer name', 'Customer email', 'Customer phone', 'Status', 'Report sent at', 'Analysis ID'];
+function downloadScansCsv(rows: ScanRow[], includeBranch: boolean, header: string[]): void {
   const lines = [header.join(',')];
   for (const s of rows) {
     lines.push(

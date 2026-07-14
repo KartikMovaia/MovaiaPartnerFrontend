@@ -1,0 +1,49 @@
+{
+  "loading": "Loading…",
+  "language": {
+    "label": "Language",
+    "change": "Change language"
+  },
+  "actions": {
+    "tryAgain": "Try again",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "signOut": "Sign out"
+  },
+  "errorState": {
+    "generic": "Something went wrong loading this data."
+  },
+  "status": {
+    "completed": "Completed",
+    "processing": "Processing",
+    "failed": "Failed",
+    "pending": "Pending",
+    "active": "Active",
+    "onboarding": "Onboarding",
+    "paused": "Paused",
+    "inactive": "Inactive",
+    "sent": "Sent",
+    "suspended": "Suspended"
+  },
+  "report": {
+    "sent": "Sent",
+    "pending": "Pending",
+    "none": "—"
+  },
+  "dateRange": {
+    "today": "Today",
+    "7d": "7 days",
+    "30d": "30 days",
+    "all": "All time",
+    "custom": "Custom",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "labels": {
+      "today": "today",
+      "7d": "last 7 days",
+      "30d": "last 30 days",
+      "all": "all time",
+      "custom": "custom range"
+    }
+  }
+}

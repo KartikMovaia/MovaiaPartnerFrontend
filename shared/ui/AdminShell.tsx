@@ -4,6 +4,9 @@
 import { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import i18n from '@shared/i18n';
+import LanguageSwitcher from '@shared/ui/LanguageSwitcher';
 import type { Staff } from '@shared/services/partnerAuth.service';
 
 export interface NavItem {
@@ -31,6 +34,7 @@ export default function AdminShell({
   onSignOut?: () => void;
   children: ReactNode;
 }) {
+  const { t } = useTranslation('common');
   const logo = '/assets/movaia-logo.png';
 
   return (
@@ -67,10 +71,13 @@ export default function AdminShell({
           );
         })}
 
+        {/* Language — sits directly under the nav (below Branding on the partner surface) */}
+        <LanguageSwitcher variant="admin" />
+
         <div className="flex-1" />
 
         {/* User block */}
-        <div className="mt-2.5 flex items-center gap-2.5 p-2.5" style={{ borderTop: '1px solid #f0f0f0' }}>
+        <div className="mt-1 flex items-center gap-2.5 p-2.5" style={{ borderTop: '1px solid #f0f0f0' }}>
           <div className="flex min-w-0 flex-1 flex-col">
             <b className="truncate text-[13px]" style={{ color: '#000' }}>
               {user.name}
@@ -83,8 +90,8 @@ export default function AdminShell({
             <button
               type="button"
               onClick={onSignOut}
-              title="Sign out"
-              aria-label="Sign out"
+              title={t('actions.signOut')}
+              aria-label={t('actions.signOut')}
               className="flex h-8 w-8 flex-none items-center justify-center rounded-[8px] transition-colors"
               style={{ color: '#9a9a9a' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = '#f2f2f2')}
@@ -108,13 +115,13 @@ export default function AdminShell({
 // carries no person name, so we show the org/branch (partner staff) or email
 // (Movaia staff) and a human-readable role label.
 export function shellUserFromStaff(staff: Staff | null): ShellUser {
-  if (!staff) return { name: 'Loading…', role: '' };
+  if (!staff) return { name: i18n.t('common:loading'), role: '' };
   const role =
     staff.kind === 'MOVAIA'
-      ? 'Movaia staff'
+      ? 'Movaia staff' // internal surface stays English (out of localization scope)
       : staff.role === 'OUTLET_ADMIN'
-        ? 'Outlet admin'
-        : 'Partner admin';
+        ? i18n.t('partner:roles.outletAdmin')
+        : i18n.t('partner:roles.partnerAdmin');
   const name =
     staff.kind === 'MOVAIA'
       ? staff.email
