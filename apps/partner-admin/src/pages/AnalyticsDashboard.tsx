@@ -1,67 +1,300 @@
-import { useEffect, useState } from 'react';
+// Partner analytics dashboard. Shared by PARTNER_ADMIN and OUTLET_ADMIN — the
+// services scope every query, so an outlet admin automatically sees only their
+// branch. The UI adapts: outlet admins get a teal single-branch banner + three
+// KPIs; partner admins get the full overview with charts and the cross-branch
+// scans table. The KPIs + "analyses over time" chart are time-period configurable
+// (default: all time); the recent-scans table always shows the latest activity.
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { analyticsService, AnalyticsOverview } from '@shared/services/analytics.service';
+import { useTranslation } from 'react-i18next';
+import { LayoutGrid, Store, Palette, ScrollText } from 'lucide-react';
+import AdminShell, { NavItem, shellUserFromStaff } from '@shared/ui/AdminShell';
+import StatCard from '@shared/ui/StatCard';
+import StatusPill from '@shared/ui/StatusPill';
+import ReportFlag from '@shared/ui/ReportFlag';
+import AreaChart from '@shared/ui/AreaChart';
+import BarList from '@shared/ui/BarList';
+import ScanOutcomes from '@shared/ui/ScanOutcomes';
+import DateRangePicker from '@shared/ui/DateRangePicker';
+import ErrorState from '@shared/components/ErrorState';
+import { fmtDateTime, fmtNum } from '@shared/ui/format';
+import { analyticsService, AnalyticsOverview, ScanRow } from '@shared/services/analytics.service';
 import { useAuth } from '@shared/contexts/AuthContext';
-import LoadingSpinner from '@shared/components/LoadingSpinner';
+import { DateRange, DEFAULT_RANGE, rangeLabel, rangeWeeks, toParams } from '@shared/utils/dateRange';
+
+function reportFlag(s: ScanRow): 'sent' | 'pending' | 'none' {
+  if (s.emailSentAt) return 'sent';
+  if (s.status === 'PROCESSING' || s.status === 'PENDING') return 'pending';
+  return 'none';
+}
 
 export default function AnalyticsDashboard() {
-  const { staff } = useAuth();
-  const [data, setData] = useState<AnalyticsOverview | null>(null);
+  const { t } = useTranslation('partner');
+  const { staff, logout } = useAuth();
+  const isOutlet = staff?.role === 'OUTLET_ADMIN';
 
+  const [range, setRange] = useState<DateRange>(DEFAULT_RANGE);
+  const [data, setData] = useState<AnalyticsOverview | null>(null);
+  const [scans, setScans] = useState<ScanRow[] | null>(null);
+  const [error, setError] = useState(false);
+
+  // Range-aware overview: reloads whenever the selected period changes.
+  const loadOverview = useCallback(() => {
+    setError(false);
+    analyticsService.overview(toParams(range)).then(setData).catch(() => setError(true));
+  }, [range]);
   useEffect(() => {
-    analyticsService.overview().then(setData).catch(() => setData(null));
+    loadOverview();
+  }, [loadOverview]);
+
+  // Recent scans are always "recent" — fetched once, not filtered by the range.
+  const loadScans = useCallback(() => {
+    analyticsService.scans({ pageSize: 50 }).then((p) => setScans(p.items)).catch(() => setError(true));
   }, []);
+  useEffect(() => {
+    loadScans();
+  }, [loadScans]);
+
+  const retry = () => {
+    loadOverview();
+    loadScans();
+  };
+
+  const nav: NavItem[] = isOutlet
+    ? [
+        { icon: <LayoutGrid size={16} />, label: t('nav.dashboard'), to: '/partner', active: true },
+        { icon: <ScrollText size={16} />, label: t('nav.scans'), to: '/partner/scans' },
+      ]
+    : [
+        { icon: <LayoutGrid size={16} />, label: t('nav.dashboard'), to: '/partner', active: true },
+        { icon: <ScrollText size={16} />, label: t('nav.scans'), to: '/partner/scans' },
+        { icon: <Store size={16} />, label: t('nav.branches'), to: '/partner/stores' },
+        { icon: <Palette size={16} />, label: t('nav.branding'), to: '/partner/branding' },
+      ];
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-10">
-      <div className="mb-6 flex items-center justify-between">
+    <AdminShell variant="partner" nav={nav} user={shellUserFromStaff(staff)} onSignOut={logout}>
+      {error ? (
+        <ErrorState message={t('dashboard.loadError')} onRetry={retry} />
+      ) : isOutlet ? (
+        <OutletView data={data} scans={scans} storeName={staff?.storeName ?? t('dashboard.yourBranch')} range={range} onRangeChange={setRange} />
+      ) : (
+        <PartnerView data={data} scans={scans} slug={staff?.partnerSlug} range={range} onRangeChange={setRange} />
+      )}
+    </AdminShell>
+  );
+}
+
+/* ── Partner admin (all branches) ─────────────────────────────────────────── */
+function PartnerView({
+  data,
+  scans,
+  slug,
+  range,
+  onRangeChange,
+}: {
+  data: AnalyticsOverview | null;
+  scans: ScanRow[] | null;
+  slug?: string;
+  range: DateRange;
+  onRangeChange: (r: DateRange) => void;
+}) {
+  const { t } = useTranslation('partner');
+  const byStore = (data?.byStore ?? []).filter((s) => s.storeId);
+  const topOutlets = [...byStore].sort((a, b) => b.scans - a.scans).slice(0, 5);
+  const activeOutlets = byStore.length;
+  const total = data?.totals.scans ?? 0;
+  const reports = data?.totals.reportsSent ?? 0;
+  const delivery = total ? ((reports / total) * 100).toFixed(1) : '0.0';
+  const perWeek = Math.round(total / rangeWeeks(range, data?.windowDays ?? 1));
+  const trend = data?.trend ?? [];
+  const funnel = data?.funnel ?? { pending: 0, processing: 0, completed: 0, failed: 0 };
+  const label = rangeLabel(range);
+
+  return (
+    <>
+      {/* Header */}
+      <div className="flex flex-wrap items-start justify-between gap-3.5">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">{staff?.partnerName ?? 'Dashboard'}</h1>
-          {staff?.partnerSlug && (
-            <p className="mt-1 text-sm text-neutral-600">
-              Slug: <span className="font-mono text-neutral-700">{staff.partnerSlug}</span>
-            </p>
-          )}
+          <h1 className="mb-1 text-2xl font-extrabold tracking-[-.4px]">{t('dashboard.overview')}</h1>
+          <p className="text-[13px]" style={{ color: '#686868' }}>
+            {t('dashboard.activeOutlets', { count: activeOutlets })}
+            {slug && (
+              <>
+                {' · '}
+                <span className="font-mono">{slug}</span>
+              </>
+            )}
+          </p>
         </div>
-        <nav className="flex gap-4 text-sm text-neutral-600">
-          <Link to="/partner/branding" className="hover:text-neutral-900">Branding</Link>
-          <Link to="/partner/stores" className="hover:text-neutral-900">Stores</Link>
-        </nav>
+        <DateRangePicker value={range} onChange={onRangeChange} />
       </div>
 
-      {!data ? (
-        <LoadingSpinner label="Loading analytics…" />
-      ) : (
-        <>
-          <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-            <Stat label="Scans (all time)" value={data.totals.allTime} />
-            <Stat label="Scans (30 days)" value={data.totals.last30Days} />
-            <Stat label="Completed" value={data.funnel.completed} />
-            <Stat label="Processing" value={data.funnel.processing} />
-          </div>
+      {/* KPIs */}
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label={t('dashboard.kpi.totalAnalyses')} value={fmtNum(total)} sub={label} />
+        <StatCard label={t('dashboard.kpi.reportsSent')} value={fmtNum(reports)} sub={t('dashboard.kpi.delivery', { pct: delivery })} />
+        <StatCard label={t('dashboard.kpi.activeOutlets')} value={String(activeOutlets)} sub={t('dashboard.kpi.withScans')} />
+        <StatCard label={t('dashboard.kpi.avgWeek')} value={String(perWeek)} sub={label} />
+      </div>
 
-          <section className="rounded-2xl border border-neutral-200 bg-white p-6">
-            <h2 className="mb-4 text-lg font-semibold text-neutral-900">By store</h2>
-            <ul className="space-y-2 text-sm text-neutral-700">
-              {data.byStore.map((s) => (
-                <li key={s.storeId ?? 'none'} className="flex justify-between">
-                  <span>{s.storeId ? `Store ${s.storeId.slice(0, 8)}` : 'No store'}</span>
-                  <span>{s.scans}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        </>
-      )}
+      {/* Scan outcomes */}
+      <ScanOutcomes funnel={funnel} label={label} />
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-[1.6fr_1fr]">
+        <Card>
+          <div className="flex items-center justify-between">
+            <b className="text-[15px]">{t('dashboard.analysesOverTime')}</b>
+            <span className="text-xs" style={{ color: '#686868' }}>
+              {label}
+            </span>
+          </div>
+          <AreaChart id="pg" data={trend.map((t) => t.scans)} labels={trend.map((t) => t.label)} xTitle={t('dashboard.period')} />
+        </Card>
+        <Card>
+          <b className="text-[15px]">{t('dashboard.byOutlet')}</b>
+          <BarList items={topOutlets.map((s) => ({ label: s.storeName ?? '—', value: s.scans }))} />
+        </Card>
+      </div>
+
+      {/* Recent scans */}
+      <ScansTable scans={scans} showOutlet title={t('dashboard.recentScans')} viewAllTo="/partner/scans" />
+    </>
+  );
+}
+
+/* ── Outlet admin (single branch, scoped) ─────────────────────────────────── */
+function OutletView({
+  data,
+  scans,
+  storeName,
+  range,
+  onRangeChange,
+}: {
+  data: AnalyticsOverview | null;
+  scans: ScanRow[] | null;
+  storeName: string;
+  range: DateRange;
+  onRangeChange: (r: DateRange) => void;
+}) {
+  const { t } = useTranslation('partner');
+  const total = data?.totals.scans ?? 0;
+  const reports = data?.totals.reportsSent ?? 0;
+  const delivery = total ? ((reports / total) * 100).toFixed(1) : '0.0';
+  const perWeek = Math.round(total / rangeWeeks(range, data?.windowDays ?? 1));
+  const funnel = data?.funnel ?? { pending: 0, processing: 0, completed: 0, failed: 0 };
+  const label = rangeLabel(range);
+
+  return (
+    <>
+      {/* Scope banner */}
+      <div
+        className="flex flex-wrap items-center gap-2.5 rounded-[10px] px-3.5 py-2.5 text-[12.5px]"
+        style={{ background: '#eef4f4', border: '1px solid #d5e8e8', color: '#0b6e6e' }}
+      >
+        <span className="font-bold">{t('dashboard.bannerName', { store: storeName })}</span>
+        <span style={{ color: '#4a8f8f' }}>{t('dashboard.bannerNote')}</span>
+      </div>
+
+      {/* Header */}
+      <div className="flex flex-wrap items-start justify-between gap-3.5">
+        <h1 className="text-[22px] font-extrabold tracking-[-.4px]">{t('dashboard.outletOverview', { store: storeName })}</h1>
+        <DateRangePicker value={range} onChange={onRangeChange} />
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+        <StatCard label={t('dashboard.kpi.totalAnalyses')} value={fmtNum(total)} sub={label} />
+        <StatCard label={t('dashboard.kpi.reportsSent')} value={fmtNum(reports)} sub={t('dashboard.kpi.deliveryShort', { pct: delivery })} />
+        <StatCard label={t('dashboard.kpi.avgWeek')} value={String(perWeek)} sub={label} />
+      </div>
+
+      {/* Scan outcomes (scoped) */}
+      <ScanOutcomes funnel={funnel} label={label} />
+
+      {/* Recent scans (scoped) */}
+      <ScansTable scans={scans} showOutlet={false} title={t('dashboard.recentScansScoped', { store: storeName })} viewAllTo="/partner/scans" />
+    </>
+  );
+}
+
+/* ── Shared bits ──────────────────────────────────────────────────────────── */
+function Card({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-3.5 rounded-[14px] p-5" style={{ background: '#fff', border: '1px solid #ececec' }}>
+      {children}
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function ScansTable({
+  scans,
+  showOutlet,
+  title,
+  viewAllTo,
+}: {
+  scans: ScanRow[] | null;
+  showOutlet: boolean;
+  title: string;
+  viewAllTo?: string;
+}) {
+  const { t } = useTranslation('partner');
+  const cols = showOutlet ? '1.1fr 1fr 1.6fr 1fr 1fr' : '1fr 1.8fr 1fr 1fr';
+  const rows = scans ?? [];
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-      <p className="text-3xl font-bold text-neutral-900">{value}</p>
-      <p className="mt-1 text-xs text-neutral-600">{label}</p>
+    <div className="overflow-hidden rounded-[14px]" style={{ background: '#fff', border: '1px solid #ececec' }}>
+      <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #f0f0f0' }}>
+        <b className="text-[15px]">{title}</b>
+        {viewAllTo && (
+          <Link to={viewAllTo} className="text-xs font-semibold" style={{ color: '#7a9e1f' }}>
+            {t('dashboard.viewAll')}
+          </Link>
+        )}
+      </div>
+      <div className="overflow-x-auto">
+        <div style={{ minWidth: showOutlet ? 640 : 460 }}>
+          {/* Column head */}
+          <div
+            className="grid px-5 py-2.5 text-[11px] font-bold uppercase tracking-[.5px]"
+            style={{ gridTemplateColumns: cols, color: '#9a9a9a', background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}
+          >
+            <span>{t('dashboard.table.date')}</span>
+            {showOutlet && <span>{t('dashboard.table.outlet')}</span>}
+            <span>{t('dashboard.table.customer')}</span>
+            <span>{t('dashboard.table.status')}</span>
+            <span>{t('dashboard.table.report')}</span>
+          </div>
+          {/* Rows */}
+          {rows.map((s, i) => (
+            <div
+              key={s.id}
+              className="grid items-center px-5 py-3.5 text-[13px]"
+              style={{ gridTemplateColumns: cols, borderBottom: i === rows.length - 1 ? 'none' : '1px solid #f5f5f5' }}
+            >
+              <span style={{ color: '#686868' }}>{fmtDateTime(s.createdAt)}</span>
+              {showOutlet && <span>{s.store?.name ?? '—'}</span>}
+              <span style={{ color: '#141414' }}>{s.customerEmail ?? '—'}</span>
+              <span>
+                <StatusPill status={s.status} />
+              </span>
+              <span>
+                <ReportFlag value={reportFlag(s)} />
+              </span>
+            </div>
+          ))}
+          {scans === null && (
+            <div className="px-5 py-6 text-[13px]" style={{ color: '#9a9a9a' }}>
+              {t('dashboard.loadingScans')}
+            </div>
+          )}
+          {scans !== null && rows.length === 0 && (
+            <div className="px-5 py-6 text-[13px]" style={{ color: '#9a9a9a' }}>
+              {t('dashboard.noScans')}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

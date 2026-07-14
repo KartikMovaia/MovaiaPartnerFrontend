@@ -1,0 +1,49 @@
+{
+  "loading": "불러오는 중…",
+  "language": {
+    "label": "언어",
+    "change": "언어 변경"
+  },
+  "actions": {
+    "tryAgain": "다시 시도",
+    "cancel": "취소",
+    "confirm": "확인",
+    "signOut": "로그아웃"
+  },
+  "errorState": {
+    "generic": "데이터를 불러오는 중 문제가 발생했습니다."
+  },
+  "status": {
+    "completed": "완료",
+    "processing": "처리 중",
+    "failed": "실패",
+    "pending": "대기 중",
+    "active": "활성",
+    "onboarding": "온보딩",
+    "paused": "일시 중지",
+    "inactive": "비활성",
+    "sent": "전송됨",
+    "suspended": "정지됨"
+  },
+  "report": {
+    "sent": "전송됨",
+    "pending": "대기 중",
+    "none": "—"
+  },
+  "dateRange": {
+    "today": "오늘",
+    "7d": "7일",
+    "30d": "30일",
+    "all": "전체 기간",
+    "custom": "사용자 지정",
+    "startDate": "시작일",
+    "endDate": "종료일",
+    "labels": {
+      "today": "오늘",
+      "7d": "최근 7일",
+      "30d": "최근 30일",
+      "all": "전체 기간",
+      "custom": "사용자 지정 기간"
+    }
+  }
+}

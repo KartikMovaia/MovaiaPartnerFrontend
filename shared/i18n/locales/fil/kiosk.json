@@ -1,0 +1,157 @@
+{
+  "poweredBy": "Pinapagana ng",
+  "startOver": "Magsimulang muli",
+  "deviceSetup": {
+    "eyebrow": "Pag-setup ng device",
+    "title": "I-set up ang kiosk na ito",
+    "desc": "Mag-sign in gamit ang account ng outlet na ito para i-link ang iPad. Para sa staff lang — para ito sa authentication at walang ipinapakitang datos ng dashboard.",
+    "wrongPartner": "Naka-set up ang iPad na ito para sa {{partner}}, hindi para sa “{{slug}}”. Mag-sign in gamit ang outlet account para sa partner na ito para magpalit.",
+    "accountMismatch": "Ang account na iyon ay para sa {{partner}}, hindi para sa kiosk na ito (“{{slug}}”).",
+    "signInError": "Hindi makapag-sign in. Suriin ang koneksyon at subukan muli.",
+    "emailPlaceholder": "Email ng outlet account",
+    "passwordPlaceholder": "Password",
+    "link": "I-link ang device na ito",
+    "linking": "Nili-link…"
+  },
+  "welcome": {
+    "eyebrow": "Pagsusuri ng running gait",
+    "title": "Suriin natin ang iyong pagtakbo.",
+    "desc": "Ilagay ang iyong mga detalye at ie-email namin ang iyong personal na analysis report — kadalasan sa loob ng ilang minuto.",
+    "firstName": "Pangalan",
+    "lastName": "Apelyido",
+    "email": "Email address",
+    "phone": "Numero ng telepono (opsyonal)",
+    "height": "Taas",
+    "weight": "Timbang",
+    "heightCmAria": "Taas sa sentimetro",
+    "heightFtAria": "Taas sa feet",
+    "heightInAria": "Taas, inches",
+    "heightUnitAria": "Yunit ng taas",
+    "weightAria": "Timbang",
+    "weightUnitAria": "Yunit ng timbang",
+    "ft": "ft",
+    "in": "in",
+    "helper": "Dito namin ie-email ang iyong report. Nakakatulong ang taas at timbang para i-tailor ang iyong analysis; opsyonal ang telepono.",
+    "consent": "Sumasang-ayon ako na i-record ako at na gumawa ang Movaia ng account para maihatid ang aking analysis, ayon sa <bold>terms & privacy policy</bold>.",
+    "start": "Simulan",
+    "settingUp": "Nagse-set up…",
+    "footer": "Sa pagpapatuloy, sumasang-ayon ka sa terms & privacy policy ng Movaia. Hindi kailanman ibinabahagi ang iyong datos sa ibang customer.",
+    "errors": {
+      "firstName": "Pakilagay ang iyong pangalan.",
+      "lastName": "Pakilagay ang iyong apelyido.",
+      "emailRequired": "Pakilagay ang iyong email para maipadala namin ang iyong report.",
+      "emailInvalid": "Pakilagay ang wastong email address.",
+      "phone": "Pakilagay ang wastong numero ng telepono, o iwanang blangko.",
+      "heightRequired": "Pakilagay ang iyong taas.",
+      "heightInvalid": "Pakilagay ang makatotohanang taas.",
+      "weightRequired": "Pakilagay ang iyong timbang.",
+      "weightInvalid": "Pakilagay ang makatotohanang timbang.",
+      "consent": "Pakisang-ayunan ang consent para magpatuloy.",
+      "generic": "May nangyaring mali. Subukan muli o magtanong sa isang team member."
+    },
+    "hero": {
+      "titleAccent": "Bihasahin ang iyong mekanika.",
+      "titleRest": "Tumakbo nang mas mahusay.",
+      "desc": "Kumuha ng AI-powered na insight para pagbutihin ang iyong performance at maiwasan ang injury.",
+      "features": {
+        "analysis": {
+          "title": "AI Analysis",
+          "body": "Kumuha ng AI-powered na insight para pagbutihin ang iyong performance at bawasan ang panganib ng injury."
+        },
+        "insights": {
+          "title": "Personalized na Insight",
+          "body": "Mga rekomendasyong angkop sa iyong estilo ng pagtakbo."
+        },
+        "progress": {
+          "title": "Subaybayan ang Progreso",
+          "body": "Subaybayan ang iyong pag-unlad sa paglipas ng panahon."
+        }
+      }
+    }
+  },
+  "returning": {
+    "eyebrow": "Maligayang pagbabalik",
+    "title": "Kumusta ulit, {{name}}!",
+    "desc": "Nakita namin ang iyong account — <bold>{{email}}</bold>. Handa ka na ba para sa isa pang run analysis?",
+    "notMe": "Hindi ako ito",
+    "continue": "Magpatuloy",
+    "lastAnalysis": "Ang iyong huling analysis: {{date}}"
+  },
+  "getReady": {
+    "step": "Hakbang 1 ng 3 · Maghanda",
+    "title": "I-set up ang iyong pagtakbo sa treadmill",
+    "subtitle": "Dalawang mabilis na bagay, saka kami magre-record ng maikling side-view na clip.",
+    "card1": {
+      "title": "Pwesto sa treadmill",
+      "body": "Mag-warm up at magbagay sa madali at natural na bilis ng pagtakbo bago tayo magsimula.",
+      "illo": "[ ilustrasyon: mananakbo sa treadmill ]"
+    },
+    "card2": {
+      "title": "I-frame ang iyong sarili nang patagilid",
+      "body": "Itayo ang iPad sa gilid mo para makita ang buong katawan mo mula ulo hanggang paa.",
+      "illo": "[ ilustrasyon: side-view na framing ]"
+    },
+    "whatNext": "Ano ang susunod na mangyayari",
+    "next": {
+      "getSet": {
+        "title": "{{count}} segundo para maghanda",
+        "body": "Abutin ang iyong natural na bilis ng pagtakbo bago tayo magsimula."
+      },
+      "oneBeep": {
+        "title": "Isang beep = magsisimula ang recording",
+        "body": "Magpatuloy lang sa pagtakbo — mga {{count}} segundo ang clip."
+      },
+      "twoBeeps": {
+        "title": "Dalawang beep = magtatapos ang recording",
+        "body": "Tapos ka na — bagalan at bumaba."
+      }
+    },
+    "cta": "Handa na ako — i-set up ang camera"
+  },
+  "camera": {
+    "feedLive": "TAGILID · LIVE",
+    "feedSimulated": "TAGILID · SIMULADO",
+    "cancel": "Kanselahin",
+    "prerollEyebrow": "Maghanda — magsisimula ang recording sa",
+    "prerollHint": "May maririnig kang beep kapag nagsimula ang recording",
+    "recordingTitle": "Magpatuloy sa pagtakbo — magaling ka",
+    "secondsLeft_one": "{{count}} segundo na lang",
+    "secondsLeft_other": "{{count}} segundo na lang"
+  },
+  "review": {
+    "title": "Nasisiyahan ka ba sa iyong clip?",
+    "subtitle": "Panoorin mo muna. Pwede kang mag-record ulit kung gusto mo.",
+    "noPreview": "Walang available na preview sa device na ito",
+    "noPreviewSub": "Ipapasa pa rin ang iyong clip para sa analysis.",
+    "recordAgain": "Mag-record ulit",
+    "submit": "Ipasa para sa analysis"
+  },
+  "uploading": {
+    "title": "Ina-upload ang iyong pagtakbo…",
+    "subtitle": "Sandali lang — hindi ito magtatagal. Huwag isara ang screen na ito.",
+    "clipCaptured": "Na-capture ang clip",
+    "uploading": "Ina-upload",
+    "analysis": "Analysis"
+  },
+  "confirmation": {
+    "title": "Handa na lahat!",
+    "desc": "Ie-email namin ang iyong analysis sa <bold>{{email}}</bold> sa sandaling handa na ito.",
+    "inbox": "iyong inbox",
+    "done": "Tapos na",
+    "resetIn_one": "Babalik sa simula sa {{count}}s · hindi itatago ng device na ito ang iyong mga detalye",
+    "resetIn_other": "Babalik sa simula sa {{count}}s · hindi itatago ng device na ito ang iyong mga detalye"
+  },
+  "cameraDenied": {
+    "title": "Kailangan ng access sa camera",
+    "desc": "Para ma-record ang iyong pagtakbo, kailangan namin ng pahintulot na gamitin ang camera ng iPad na ito. I-enable ito sa <bold>Settings → {{partner}} → Camera</bold>, saka subukan muli.",
+    "getHelp": "Humingi ng tulong sa staff",
+    "tryAgain": "Subukan muli"
+  },
+  "uploadFailed": {
+    "title": "Hindi natuloy ang upload",
+    "desc": "Hindi namin naabot ang network — suriin ang koneksyon at i-tap ang retry. Hindi mo na kailangang mag-record ulit.",
+    "startOver": "Magsimulang muli",
+    "retry": "Subukang muli ang upload",
+    "help": "Nahihirapan pa rin? Humingi ng tulong sa isang team member ng {{partner}}."
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "loading": "Naglo-load…",
+  "language": {
+    "label": "Wika",
+    "change": "Palitan ang wika"
+  },
+  "actions": {
+    "tryAgain": "Subukan muli",
+    "cancel": "Kanselahin",
+    "confirm": "Kumpirmahin",
+    "signOut": "Mag-sign out"
+  },
+  "errorState": {
+    "generic": "May nangyaring mali sa pag-load ng data na ito."
+  },
+  "status": {
+    "completed": "Tapos na",
+    "processing": "Pinoproseso",
+    "failed": "Nabigo",
+    "pending": "Naghihintay",
+    "active": "Aktibo",
+    "onboarding": "Nag-o-onboard",
+    "paused": "Naka-pause",
+    "inactive": "Hindi aktibo",
+    "sent": "Naipadala",
+    "suspended": "Suspindido"
+  },
+  "report": {
+    "sent": "Naipadala",
+    "pending": "Naghihintay",
+    "none": "—"
+  },
+  "dateRange": {
+    "today": "Ngayon",
+    "7d": "7 araw",
+    "30d": "30 araw",
+    "all": "Lahat ng panahon",
+    "custom": "Custom",
+    "startDate": "Petsa ng simula",
+    "endDate": "Petsa ng pagtatapos",
+    "labels": {
+      "today": "ngayon",
+      "7d": "nakaraang 7 araw",
+      "30d": "nakaraang 30 araw",
+      "all": "lahat ng panahon",
+      "custom": "custom na saklaw"
+    }
+  }
+}

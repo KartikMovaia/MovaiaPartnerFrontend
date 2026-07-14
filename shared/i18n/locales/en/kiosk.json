@@ -1,0 +1,157 @@
+{
+  "poweredBy": "Powered by",
+  "startOver": "Start over",
+  "deviceSetup": {
+    "eyebrow": "Device setup",
+    "title": "Set up this kiosk",
+    "desc": "Sign in with this outlet's account to link the iPad. Staff only — this is for authentication and shows no dashboard data.",
+    "wrongPartner": "This iPad is set up for {{partner}}, not “{{slug}}”. Sign in with an outlet account for this partner to switch.",
+    "accountMismatch": "That account belongs to {{partner}}, not this kiosk (“{{slug}}”).",
+    "signInError": "Couldn't sign in. Check the connection and try again.",
+    "emailPlaceholder": "Outlet account email",
+    "passwordPlaceholder": "Password",
+    "link": "Link this device",
+    "linking": "Linking…"
+  },
+  "welcome": {
+    "eyebrow": "Running gait analysis",
+    "title": "Let's analyze your run.",
+    "desc": "Enter your details and we'll email your personal analysis report — usually within a few minutes.",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "email": "Email address",
+    "phone": "Phone number (optional)",
+    "height": "Height",
+    "weight": "Weight",
+    "heightCmAria": "Height in centimetres",
+    "heightFtAria": "Height in feet",
+    "heightInAria": "Height, inches",
+    "heightUnitAria": "Height unit",
+    "weightAria": "Weight",
+    "weightUnitAria": "Weight unit",
+    "ft": "ft",
+    "in": "in",
+    "helper": "We'll email your report here. Height & weight help tailor your analysis; phone is optional.",
+    "consent": "I agree to be recorded and to Movaia creating an account to deliver my analysis, per the <bold>terms & privacy policy</bold>.",
+    "start": "Start",
+    "settingUp": "Setting up…",
+    "footer": "By continuing you agree to Movaia's terms & privacy policy. Your data is never shared with other customers.",
+    "errors": {
+      "firstName": "Please enter your first name.",
+      "lastName": "Please enter your last name.",
+      "emailRequired": "Please enter your email so we can send your report.",
+      "emailInvalid": "Please enter a valid email address.",
+      "phone": "Please enter a valid phone number, or leave it blank.",
+      "heightRequired": "Please enter your height.",
+      "heightInvalid": "Please enter a realistic height.",
+      "weightRequired": "Please enter your weight.",
+      "weightInvalid": "Please enter a realistic weight.",
+      "consent": "Please agree to the consent to continue.",
+      "generic": "Something went wrong. Please try again or ask a team member."
+    },
+    "hero": {
+      "titleAccent": "Master your mechanics.",
+      "titleRest": "Run better.",
+      "desc": "Get AI-powered insights to improve your performance and prevent injuries.",
+      "features": {
+        "analysis": {
+          "title": "AI Analysis",
+          "body": "Get AI-powered insights to improve your performance and lower injury risk."
+        },
+        "insights": {
+          "title": "Personalized Insights",
+          "body": "Tailored recommendations for your running style."
+        },
+        "progress": {
+          "title": "Track Progress",
+          "body": "Monitor your improvement over time."
+        }
+      }
+    }
+  },
+  "returning": {
+    "eyebrow": "Welcome back",
+    "title": "Hi again, {{name}}!",
+    "desc": "We found your account — <bold>{{email}}</bold>. Ready for another run analysis?",
+    "notMe": "Not me",
+    "continue": "Continue",
+    "lastAnalysis": "Your last analysis: {{date}}"
+  },
+  "getReady": {
+    "step": "Step 1 of 3 · Get ready",
+    "title": "Set up your treadmill run",
+    "subtitle": "Two quick things, then we'll record a short side-view clip.",
+    "card1": {
+      "title": "Position on the treadmill",
+      "body": "Warm up and settle into an easy, natural running pace before we start.",
+      "illo": "[ illustration: runner on treadmill ]"
+    },
+    "card2": {
+      "title": "Frame yourself side-on",
+      "body": "Stand the iPad to your side so your whole body is in view from head to toe.",
+      "illo": "[ illustration: side-view framing ]"
+    },
+    "whatNext": "What happens next",
+    "next": {
+      "getSet": {
+        "title": "{{count}} seconds to get set",
+        "body": "Build up to your natural running pace before we start."
+      },
+      "oneBeep": {
+        "title": "One beep = recording starts",
+        "body": "Just keep running — the clip is about {{count}} seconds."
+      },
+      "twoBeeps": {
+        "title": "Two beeps = recording ends",
+        "body": "You're done — slow down and step off."
+      }
+    },
+    "cta": "I'm ready — set up camera"
+  },
+  "camera": {
+    "feedLive": "SIDE-VIEW · LIVE",
+    "feedSimulated": "SIDE-VIEW · SIMULATED",
+    "cancel": "Cancel",
+    "prerollEyebrow": "Get set — recording starts in",
+    "prerollHint": "You'll hear a beep when recording starts",
+    "recordingTitle": "Keep running — you're doing great",
+    "secondsLeft_one": "{{count}} second left",
+    "secondsLeft_other": "{{count}} seconds left"
+  },
+  "review": {
+    "title": "Happy with your clip?",
+    "subtitle": "Give it a quick watch. You can re-record if you'd like.",
+    "noPreview": "No preview available on this device",
+    "noPreviewSub": "Your clip will still be submitted for analysis.",
+    "recordAgain": "Record again",
+    "submit": "Submit for analysis"
+  },
+  "uploading": {
+    "title": "Uploading your run…",
+    "subtitle": "Hang tight — this only takes a moment. Please don't close this screen.",
+    "clipCaptured": "Clip captured",
+    "uploading": "Uploading",
+    "analysis": "Analysis"
+  },
+  "confirmation": {
+    "title": "You're all set!",
+    "desc": "We'll email your analysis to <bold>{{email}}</bold> as soon as it's ready.",
+    "inbox": "your inbox",
+    "done": "Done",
+    "resetIn_one": "Returning to start in {{count}}s · this device won't keep your details",
+    "resetIn_other": "Returning to start in {{count}}s · this device won't keep your details"
+  },
+  "cameraDenied": {
+    "title": "Camera access is needed",
+    "desc": "To record your run we need permission to use this iPad's camera. Enable it in <bold>Settings → {{partner}} → Camera</bold>, then try again.",
+    "getHelp": "Get staff help",
+    "tryAgain": "Try again"
+  },
+  "uploadFailed": {
+    "title": "Upload didn't go through",
+    "desc": "We couldn't reach the network — check the connection and tap retry. You won't need to record again.",
+    "startOver": "Start over",
+    "retry": "Retry upload",
+    "help": "Still stuck? Ask a {{partner}} team member for help."
+  }
+}

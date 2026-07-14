@@ -1,15 +1,48 @@
-import { api } from './api.service';
+// Kiosk — the walk-up scan flow. Uses the device-token client (kioskApi); the
+// device token is stored/cleared here. Store/partner scope is server-side (from
+// the device), so these calls send no storeId.
+import axios from 'axios';
+import { kioskApi, deviceToken } from './api.service';
 
 export interface IdentifyResult {
   scanId: string;
   analysisId: string;
   uploadUrl: string;
   key: string;
+  isReturning: boolean;
+  customer: { firstName: string; email: string };
+}
+
+export interface DeviceBinding {
+  storeId: string;
+  storeName: string | null;
+  partnerSlug: string;
+  partnerName: string;
 }
 
 export const kioskService = {
-  async startSession(storeId: string): Promise<{ kioskSessionId: string; expiresAt: string }> {
-    const { data } = await api.post('/kiosk/sessions', { storeId });
+  // ── Device binding (one-time per iPad) ──────────────────────────────────
+  async deviceLogin(email: string, password: string): Promise<DeviceBinding> {
+    // kioskApi attaches the current device token (if any) so the backend can
+    // revoke a prior binding for a clean switch.
+    const { data } = await kioskApi.post('/kiosk/device/login', { email, password });
+    deviceToken.set(data.deviceToken);
+    return data.binding as DeviceBinding;
+  },
+  async deviceMe(): Promise<DeviceBinding> {
+    const { data } = await kioskApi.get('/kiosk/device/me');
+    return data.binding as DeviceBinding;
+  },
+  // Password-gated unbind: an outlet admin of this device's branch. Only clears
+  // the local token on success (a wrong password leaves the iPad bound).
+  async deviceLogout(email: string, password: string): Promise<void> {
+    await kioskApi.post('/kiosk/device/logout', { email, password });
+    deviceToken.clear();
+  },
+
+  // ── Walk-up flow ────────────────────────────────────────────────────────
+  async startSession(): Promise<{ kioskSessionId: string; expiresAt: string }> {
+    const { data } = await kioskApi.post('/kiosk/sessions');
     return data;
   },
 
@@ -17,25 +50,34 @@ export const kioskService = {
     kioskSessionId: string;
     firstName: string;
     lastName: string;
-    email?: string;
+    email: string;
     phone?: string;
+    heightCm?: number;
+    weightKg?: number;
     consent: true;
   }): Promise<IdentifyResult> {
-    const { data } = await api.post('/kiosk/identify', input);
-    return data;
+    const { data } = await kioskApi.post('/kiosk/identify', input);
+    return data as IdentifyResult;
   },
 
-  // Uploads the recorded blob directly to Movaia's S3 via the presigned URL.
-  async uploadVideo(uploadUrl: string, blob: Blob): Promise<void> {
-    await fetch(uploadUrl, {
-      method: 'PUT',
+  // Direct presigned PUT to storage (plain axios — no auth headers on the
+  // cross-origin PUT). Dev stub: the backend returns a placeholder URL no bucket
+  // accepts, so skip the real PUT for stub URLs and let the flow complete.
+  async uploadVideo(uploadUrl: string, blob: Blob, onProgress?: (pct: number) => void): Promise<void> {
+    if (uploadUrl.includes('X-Amz-Stub-Presigned')) {
+      onProgress?.(100);
+      return;
+    }
+    await axios.put(uploadUrl, blob, {
       headers: { 'Content-Type': blob.type || 'video/webm' },
-      body: blob,
+      onUploadProgress: (e) => {
+        if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100));
+      },
     });
   },
 
   async submit(scanId: string): Promise<{ status: string }> {
-    const { data } = await api.post('/kiosk/submit', { scanId });
-    return data;
+    const { data } = await kioskApi.post('/kiosk/submit', { scanId });
+    return data as { status: string };
   },
 };

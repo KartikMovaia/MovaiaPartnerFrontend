@@ -1,11 +1,11 @@
 // Timed side-view recorder for the kiosk. Flow:
 //   press Start → SETUP_SECONDS countdown (time to get on the treadmill) →
-//   cue "start recording" → record RECORD_SECONDS → cue "end recording" → stop.
+//   beep ×1 → record RECORD_SECONDS → beep ×2 → stop.
 // Calls onComplete(blob) with the captured clip. Adapted from Movaia's
 // CameraRecorderModal (MediaRecorder capture).
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Video } from 'lucide-react';
-import { cue } from './cues';
+import { beeps } from './cues';
 
 const SETUP_SECONDS = 20; // time to set up on the treadmill before recording
 const RECORD_SECONDS = 10; // length of the recorded clip
@@ -47,7 +47,7 @@ export default function KioskRecorder({ onComplete }: { onComplete: (blob: Blob)
   }, []);
 
   const stopRecording = useCallback(() => {
-    cue('End recording');
+    beeps(2);
     recorderRef.current?.stop();
   }, []);
 
@@ -64,7 +64,7 @@ export default function KioskRecorder({ onComplete }: { onComplete: (blob: Blob)
     };
     recorder.start();
     recorderRef.current = recorder;
-    cue('Start recording');
+    beeps(1);
     setPhase('recording');
     setCount(RECORD_SECONDS);
   }, [onComplete]);

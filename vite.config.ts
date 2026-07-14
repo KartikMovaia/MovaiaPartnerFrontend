@@ -13,6 +13,11 @@ export default defineConfig({
   },
   server: {
     port: 5174, // distinct from Movaia's 5173 so both can run locally
+    // Same-origin API in dev: forward /api to the backend. Auth is Bearer-token
+    // (no cookies), so this is just for convenience / avoiding CORS.
+    proxy: {
+      '/api': { target: 'http://localhost:4000', changeOrigin: true },
+    },
   },
   build: {
     rollupOptions: {

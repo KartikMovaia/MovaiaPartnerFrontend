@@ -7,15 +7,13 @@ import { PartnerTheme, DEFAULT_THEME } from './types';
 
 interface ContextValue {
   theme: PartnerTheme;
-  stores: Array<{ id: string; name: string }>;
   loading: boolean;
 }
 
-const ThemeContext = createContext<ContextValue>({ theme: DEFAULT_THEME, stores: [], loading: false });
+const ThemeContext = createContext<ContextValue>({ theme: DEFAULT_THEME, loading: false });
 
 export const PartnerThemeProvider: React.FC<{ slug?: string; children: ReactNode }> = ({ slug, children }) => {
   const [theme, setTheme] = useState<PartnerTheme>(DEFAULT_THEME);
-  const [stores, setStores] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState<boolean>(!!slug);
 
   useEffect(() => {
@@ -39,7 +37,6 @@ export const PartnerThemeProvider: React.FC<{ slug?: string; children: ReactNode
             accent: b?.accentColor || DEFAULT_THEME.colors.accent,
           },
         });
-        setStores(data.partner.stores || []);
       })
       .catch(() => setTheme(DEFAULT_THEME))
       .finally(() => !cancelled && setLoading(false));
@@ -57,7 +54,7 @@ export const PartnerThemeProvider: React.FC<{ slug?: string; children: ReactNode
     if (theme.colors.accent) root.style.setProperty('--brand-accent', theme.colors.accent);
   }, [theme]);
 
-  const value = useMemo(() => ({ theme, stores, loading }), [theme, stores, loading]);
+  const value = useMemo(() => ({ theme, loading }), [theme, loading]);
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };
 

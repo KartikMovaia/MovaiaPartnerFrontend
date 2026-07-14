@@ -1,0 +1,157 @@
+{
+  "poweredBy": "技術支援",
+  "startOver": "重新開始",
+  "deviceSetup": {
+    "eyebrow": "裝置設定",
+    "title": "設定這台服務機",
+    "desc": "請使用此門市的帳號登入以連結 iPad。僅限工作人員 — 此步驟用於驗證身分，不會顯示任何儀表板資料。",
+    "wrongPartner": "這台 iPad 已設定給 {{partner}}，而非 “{{slug}}”。請使用此夥伴的門市帳號登入以切換。",
+    "accountMismatch": "該帳號屬於 {{partner}}，而非這台服務機（“{{slug}}”）。",
+    "signInError": "無法登入。請檢查網路連線後再試一次。",
+    "emailPlaceholder": "門市帳號電子郵件",
+    "passwordPlaceholder": "密碼",
+    "link": "連結此裝置",
+    "linking": "連結中…"
+  },
+  "welcome": {
+    "eyebrow": "跑步步態分析",
+    "title": "來分析您的跑姿吧。",
+    "desc": "輸入您的資料，我們會將您的個人分析報告以電子郵件寄給您 — 通常只需幾分鐘。",
+    "firstName": "名字",
+    "lastName": "姓氏",
+    "email": "電子郵件地址",
+    "phone": "電話號碼（選填）",
+    "height": "身高",
+    "weight": "體重",
+    "heightCmAria": "身高（公分）",
+    "heightFtAria": "身高（英尺）",
+    "heightInAria": "身高，英吋",
+    "heightUnitAria": "身高單位",
+    "weightAria": "體重",
+    "weightUnitAria": "體重單位",
+    "ft": "ft",
+    "in": "in",
+    "helper": "我們會將報告寄到這個信箱。身高與體重有助於為您量身打造分析；電話為選填。",
+    "consent": "我同意接受錄影，並同意 Movaia 建立帳號以提供我的分析，並遵守<bold>服務條款與隱私權政策</bold>。",
+    "start": "開始",
+    "settingUp": "設定中…",
+    "footer": "繼續即表示您同意 Movaia 的服務條款與隱私權政策。您的資料絕不會與其他顧客分享。",
+    "errors": {
+      "firstName": "請輸入您的名字。",
+      "lastName": "請輸入您的姓氏。",
+      "emailRequired": "請輸入您的電子郵件，以便我們寄送報告給您。",
+      "emailInvalid": "請輸入有效的電子郵件地址。",
+      "phone": "請輸入有效的電話號碼，或留白。",
+      "heightRequired": "請輸入您的身高。",
+      "heightInvalid": "請輸入合理的身高。",
+      "weightRequired": "請輸入您的體重。",
+      "weightInvalid": "請輸入合理的體重。",
+      "consent": "請同意相關聲明以繼續。",
+      "generic": "發生錯誤。請再試一次，或詢問工作人員。"
+    },
+    "hero": {
+      "titleAccent": "掌握您的跑步力學。",
+      "titleRest": "跑得更好。",
+      "desc": "運用 AI 洞察，提升您的表現並預防運動傷害。",
+      "features": {
+        "analysis": {
+          "title": "AI 分析",
+          "body": "運用 AI 洞察，提升您的表現並降低受傷風險。"
+        },
+        "insights": {
+          "title": "個人化洞察",
+          "body": "為您的跑步風格量身打造的建議。"
+        },
+        "progress": {
+          "title": "追蹤進展",
+          "body": "持續掌握您一路以來的進步。"
+        }
+      }
+    }
+  },
+  "returning": {
+    "eyebrow": "歡迎回來",
+    "title": "{{name}}，很高興再次見到您！",
+    "desc": "我們找到了您的帳號 — <bold>{{email}}</bold>。準備好再進行一次跑姿分析了嗎？",
+    "notMe": "不是我",
+    "continue": "繼續",
+    "lastAnalysis": "您上次的分析：{{date}}"
+  },
+  "getReady": {
+    "step": "第 1 步，共 3 步 · 準備開始",
+    "title": "設定您的跑步機跑步",
+    "subtitle": "兩個簡單步驟，接著我們會錄製一段簡短的側面影片。",
+    "card1": {
+      "title": "在跑步機上站定位置",
+      "body": "開始前請先熱身，並調整到輕鬆、自然的跑步節奏。",
+      "illo": "[ 插圖：跑者在跑步機上 ]"
+    },
+    "card2": {
+      "title": "以側面入鏡",
+      "body": "將 iPad 直立擺放在您的側邊，讓您從頭到腳都完整入鏡。",
+      "illo": "[ 插圖：側面取景 ]"
+    },
+    "whatNext": "接下來會發生什麼",
+    "next": {
+      "getSet": {
+        "title": "{{count}} 秒準備時間",
+        "body": "開始前，請逐漸加速到您自然的跑步節奏。"
+      },
+      "oneBeep": {
+        "title": "一聲嗶 = 開始錄影",
+        "body": "繼續跑就好 — 影片約 {{count}} 秒。"
+      },
+      "twoBeeps": {
+        "title": "兩聲嗶 = 錄影結束",
+        "body": "完成囉 — 請放慢速度並走下跑步機。"
+      }
+    },
+    "cta": "我準備好了 — 設定相機"
+  },
+  "camera": {
+    "feedLive": "側面視角 · 即時",
+    "feedSimulated": "側面視角 · 模擬",
+    "cancel": "取消",
+    "prerollEyebrow": "準備好 — 錄影即將開始",
+    "prerollHint": "錄影開始時您會聽到一聲嗶",
+    "recordingTitle": "繼續跑 — 您表現得很好",
+    "secondsLeft_one": "還剩 {{count}} 秒",
+    "secondsLeft_other": "還剩 {{count}} 秒"
+  },
+  "review": {
+    "title": "對這段影片滿意嗎？",
+    "subtitle": "快速看一下。若需要，您也可以重新錄製。",
+    "noPreview": "此裝置無法預覽",
+    "noPreviewSub": "您的影片仍會提交進行分析。",
+    "recordAgain": "重新錄製",
+    "submit": "提交分析"
+  },
+  "uploading": {
+    "title": "正在上傳您的跑步影片…",
+    "subtitle": "請稍候 — 只需一點時間。請勿關閉此畫面。",
+    "clipCaptured": "影片已錄製",
+    "uploading": "上傳中",
+    "analysis": "分析"
+  },
+  "confirmation": {
+    "title": "一切就緒！",
+    "desc": "分析完成後，我們會立即將結果寄到 <bold>{{email}}</bold>。",
+    "inbox": "您的信箱",
+    "done": "完成",
+    "resetIn_one": "{{count}} 秒後返回首頁 · 此裝置不會保留您的資料",
+    "resetIn_other": "{{count}} 秒後返回首頁 · 此裝置不會保留您的資料"
+  },
+  "cameraDenied": {
+    "title": "需要相機使用權限",
+    "desc": "為了錄製您的跑步影片，我們需要使用這台 iPad 相機的權限。請至 <bold>設定 → {{partner}} → 相機</bold> 開啟權限，然後再試一次。",
+    "getHelp": "尋求工作人員協助",
+    "tryAgain": "再試一次"
+  },
+  "uploadFailed": {
+    "title": "上傳未成功",
+    "desc": "我們無法連上網路 — 請檢查網路連線後點選重試。您不需要重新錄製。",
+    "startOver": "重新開始",
+    "retry": "重試上傳",
+    "help": "仍有問題嗎？請向 {{partner}} 的工作人員尋求協助。"
+  }
+}

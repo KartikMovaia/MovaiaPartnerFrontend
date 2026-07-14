@@ -2,40 +2,51 @@
 //   /admin/*       → Movaia internal staff (partner management)
 //   /partner/*     → partner admins (branding, stores, analytics)
 //   /kiosk/:slug   → walk-up customer scan flow (themed by partner slug)
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from '@shared/components/ProtectedRoute';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
+import ErrorBoundary from '@shared/components/ErrorBoundary';
+import { lazyWithRetry } from '@shared/utils/lazyWithRetry';
 
 // Auth
-const StaffLogin = lazy(() => import('@apps/partner-admin/src/pages/StaffLogin'));
-const SetPassword = lazy(() => import('@apps/partner-admin/src/pages/SetPassword'));
+const StaffLogin = lazyWithRetry(() => import('@apps/partner-admin/src/pages/StaffLogin'));
+const SetPassword = lazyWithRetry(() => import('@apps/partner-admin/src/pages/SetPassword'));
 
 // Movaia admin
-const PartnerList = lazy(() => import('@apps/movaia-admin/src/pages/PartnerList'));
-const PartnerCreate = lazy(() => import('@apps/movaia-admin/src/pages/PartnerCreate'));
-const PartnerDetail = lazy(() => import('@apps/movaia-admin/src/pages/PartnerDetail'));
+const MovaiaDashboard = lazyWithRetry(() => import('@apps/movaia-admin/src/pages/MovaiaDashboard'));
+const PartnerList = lazyWithRetry(() => import('@apps/movaia-admin/src/pages/PartnerList'));
+const PartnerDetail = lazyWithRetry(() => import('@apps/movaia-admin/src/pages/PartnerDetail'));
+const Billing = lazyWithRetry(() => import('@apps/movaia-admin/src/pages/Billing'));
 
 // Partner admin
-const BrandingSettings = lazy(() => import('@apps/partner-admin/src/pages/BrandingSettings'));
-const StoreManagement = lazy(() => import('@apps/partner-admin/src/pages/StoreManagement'));
-const AnalyticsDashboard = lazy(() => import('@apps/partner-admin/src/pages/AnalyticsDashboard'));
+const BrandingSettings = lazyWithRetry(() => import('@apps/partner-admin/src/pages/BrandingSettings'));
+const StoreManagement = lazyWithRetry(() => import('@apps/partner-admin/src/pages/StoreManagement'));
+const AnalyticsDashboard = lazyWithRetry(() => import('@apps/partner-admin/src/pages/AnalyticsDashboard'));
+const Scans = lazyWithRetry(() => import('@apps/partner-admin/src/pages/Scans'));
 
 // Kiosk
-const KioskApp = lazy(() => import('@apps/kiosk/src/pages/KioskApp'));
+const KioskApp = lazyWithRetry(() => import('@apps/kiosk/src/pages/KioskApp'));
 
 export default function App() {
   return (
-    <Suspense fallback={<LoadingSpinner label="Loading…" />}>
-      <Routes>
-        <Route path="/" element={<Navigate to="/admin" replace />} />
+    <ErrorBoundary>
+      <Suspense fallback={<LoadingSpinner label="Loading…" />}>
+        <Routes>
+        <Route path="/" element={<Navigate to="/partner" replace />} />
 
-        {/* Shared staff login (resolves PARTNER vs MOVAIA by email server-side) */}
+        {/* One StaffLogin component, mounted twice. `kind` (from the route, not the
+            email) selects the audience: it sets the chrome and is passed to the
+            login call so the backend authenticates against the right staff type. */}
         <Route path="/admin/login" element={<StaffLogin defaultRedirect="/admin" kind="MOVAIA" />} />
         <Route path="/partner/login" element={<StaffLogin defaultRedirect="/partner" kind="PARTNER" />} />
 
-        {/* Forced password change — authenticated, but exempt from the password
-            gate so it can't redirect-loop into itself. Works for both kinds. */}
+        {/* Set-password page for staff still on a temporary password
+            (staff.mustChangePassword). It's behind ProtectedRoute, so you must be
+            signed in to reach it — but it passes enforcePasswordChange={false}.
+            Every OTHER protected route redirects must-change users here; if this
+            route did too, /set-password would redirect into itself forever. No
+            `kind` prop, so the one page serves both Movaia and partner staff. */}
         <Route
           path="/set-password"
           element={
@@ -50,15 +61,15 @@ export default function App() {
           path="/admin"
           element={
             <ProtectedRoute kind="MOVAIA" loginPath="/admin/login">
-              <PartnerList />
+              <MovaiaDashboard />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/admin/partners/new"
+          path="/admin/partners"
           element={
             <ProtectedRoute kind="MOVAIA" loginPath="/admin/login">
-              <PartnerCreate />
+              <PartnerList />
             </ProtectedRoute>
           }
         />
@@ -70,8 +81,18 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/billing"
+          element={
+            <ProtectedRoute kind="MOVAIA" loginPath="/admin/login">
+              <Billing />
+            </ProtectedRoute>
+          }
+        />
 
-        {/* Partner admins */}
+        {/* Partner surface. The dashboard is shared by PARTNER_ADMIN and
+            OUTLET_ADMIN (it renders a scoped view for outlets); the management
+            pages below are PARTNER_ADMIN-only. */}
         <Route
           path="/partner"
           element={
@@ -80,10 +101,19 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        {/* Full scan log — shared by partner + outlet admins (service scopes outlets). */}
+        <Route
+          path="/partner/scans"
+          element={
+            <ProtectedRoute kind="PARTNER" loginPath="/partner/login">
+              <Scans />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/partner/branding"
           element={
-            <ProtectedRoute kind="PARTNER" loginPath="/partner/login">
+            <ProtectedRoute kind="PARTNER" role="PARTNER_ADMIN" loginPath="/partner/login">
               <BrandingSettings />
             </ProtectedRoute>
           }
@@ -91,17 +121,23 @@ export default function App() {
         <Route
           path="/partner/stores"
           element={
-            <ProtectedRoute kind="PARTNER" loginPath="/partner/login">
+            <ProtectedRoute kind="PARTNER" role="PARTNER_ADMIN" loginPath="/partner/login">
               <StoreManagement />
             </ProtectedRoute>
           }
         />
 
-        {/* Public kiosk — themed by partner slug, no staff login */}
+        {/* Kiosk — themed by partner slug. The walk-up customer flow is public
+            (no per-customer login), but the iPad must first be bound to an outlet
+            by a one-time outlet-admin device sign-in (see DeviceGate in KioskApp).
+            That device auth lives inside the kiosk app, so this route sits outside
+            ProtectedRoute (the staff route guard). */}
         <Route path="/kiosk/:slug/*" element={<KioskApp />} />
 
-        <Route path="*" element={<Navigate to="/admin" replace />} />
-      </Routes>
-    </Suspense>
+        {/* Unknown path → send to the partner surface (partners are the common case). */}
+        <Route path="*" element={<Navigate to="/partner" replace />} />
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
   );
 }

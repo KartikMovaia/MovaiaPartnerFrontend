@@ -1,3 +1,9 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "$comment": "SPA fallback only. The backend /api rewrite was removed while the backend is rebuilt — re-add it (before the catch-all below) pointing at the deployed backend origin.",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }

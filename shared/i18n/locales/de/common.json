@@ -1,0 +1,49 @@
+{
+  "loading": "Wird geladen…",
+  "language": {
+    "label": "Sprache",
+    "change": "Sprache ändern"
+  },
+  "actions": {
+    "tryAgain": "Erneut versuchen",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "signOut": "Abmelden"
+  },
+  "errorState": {
+    "generic": "Beim Laden dieser Daten ist ein Fehler aufgetreten."
+  },
+  "status": {
+    "completed": "Abgeschlossen",
+    "processing": "Wird verarbeitet",
+    "failed": "Fehlgeschlagen",
+    "pending": "Ausstehend",
+    "active": "Aktiv",
+    "onboarding": "In Einrichtung",
+    "paused": "Pausiert",
+    "inactive": "Inaktiv",
+    "sent": "Gesendet",
+    "suspended": "Gesperrt"
+  },
+  "report": {
+    "sent": "Gesendet",
+    "pending": "Ausstehend",
+    "none": "—"
+  },
+  "dateRange": {
+    "today": "Heute",
+    "7d": "7 Tage",
+    "30d": "30 Tage",
+    "all": "Gesamt",
+    "custom": "Individuell",
+    "startDate": "Startdatum",
+    "endDate": "Enddatum",
+    "labels": {
+      "today": "heute",
+      "7d": "letzte 7 Tage",
+      "30d": "letzte 30 Tage",
+      "all": "gesamter Zeitraum",
+      "custom": "individueller Zeitraum"
+    }
+  }
+}

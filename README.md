@@ -1,131 +1,73 @@
-# Movaia for Gyms/Clubs — Frontend
+# Movaia Partners — Frontend
 
-Single-page React application for **Movaia for Gyms/Clubs**. It serves three distinct
-surfaces from one SPA, sharing auth, theming, and API plumbing:
+The web app for **Movaia for Gyms & Clubs**. One Vite + React + TypeScript + Tailwind single-page app that serves **three surfaces**:
 
-| Surface           | Route          | Who | What they do |
-| ----------------- | -------------- | --- | ------------ |
-| **Movaia Admin**  | `/admin/*`     | Movaia internal staff | Manage partners, provision partner admins |
-| **Partner Admin** | `/partner/*`   | Partner staff         | Branding, chain stores, analytics |
-| **Kiosk**         | `/kiosk/:slug` | Walk-up customers     | identify → record → review → submit (themed per partner) |
+| Surface | Route | Who uses it |
+|---|---|---|
+| **Movaia admin** | `/admin/*` | Movaia staff — manage partners, see platform analytics |
+| **Partner admin / outlet** | `/partner/*` | Partner staff — branches, branding, and analytics |
+| **Kiosk** | `/kiosk/:slug` | Public walk-up scan flow on a gym's iPad (white-labeled by partner) |
 
-It talks to the [backend](../backend) API and is themed at runtime by partner `slug`.
+It talks to the [backend](../backend) over `/api`.
 
 ---
 
-## Tech stack
+## Getting started
 
-| Concern        | Choice |
-| -------------- | ------ |
-| Framework      | React 18 |
-| Build tool     | Vite 5 |
-| Language       | TypeScript 5 |
-| Routing        | React Router 6 (with lazy-loaded routes) |
-| Styling        | Tailwind CSS 3 (+ `@tailwindcss/forms`) |
-| Icons          | lucide-react |
-| HTTP           | Axios |
-| Hosting        | Vercel (SPA rewrite) |
+**Prerequisites:** Node 20+, and the **backend running on `http://localhost:4000`** (see `../backend`).
+
+```bash
+npm install
+npm run dev        # http://localhost:5174
+```
+
+That's it — the Vite dev server **proxies `/api` to the backend on :4000**, so no CORS or extra config is needed. (To point at a different backend instead of the proxy, set `VITE_API_URL` in `.env`.)
+
+First-time end-to-end: create a platform admin in the backend, then sign in at `/admin/login`, create a partner + its admin, sign in at `/partner/login`, and open `/kiosk/<slug>`.
+
+**Demo data (fastest path):** run `npm run script:seed-demo` in `../backend` to populate ~10 partners with ~6 months of activity (great for the date-range KPIs, top-partners, status filter, and billing). Sign into `/partner` with **`demo@movaia.com`** / **`outlet@movaia.com`** (password `Movaia@2026!`), and `/admin` with your platform admin. Note: the kiosk needs the partner linked to Movaia (the seed prints the `link-movaia` command).
+
+---
+
+## Scripts
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Dev server on :5174 (with `/api` proxy) |
+| `npm run build` | Type-check + production build to `dist/` |
+| `npm run preview` | Serve the production build locally |
+| `npm run typecheck` | Type-check only |
+| `npm run lint` | ESLint |
+
+---
+
+## How it's built
+
+- **Auth is Bearer-token.** `shared/services/api.service.ts` is an axios client that keeps the access + refresh tokens in `localStorage`, attaches `Authorization: Bearer …`, and on a `401` refreshes once and retries. The kiosk uses a **separate device token** (its own storage key + client).
+- **`AuthContext`** holds the signed-in staff; **`ProtectedRoute`** guards the `/admin` and `/partner` routes by role.
+- **All backend calls go through `shared/services/*`** — one service per domain (auth, partners, stores, branding, analytics, kiosk). Pages never call the API directly.
+- **Kiosk theming** is white-labeled per partner: `PartnerThemeProvider` fetches the partner's public branding by slug and exposes it as CSS variables.
+
+> **Note:** there's one staff session per browser — both `/admin` and `/partner` share the same token slot, so signing into one signs you out of the other. To be signed into both at once, use a separate browser profile.
 
 ---
 
 ## Project structure
 
 ```
-frontend/
-├── index.html               # Vite entry HTML
-├── src/
-│   ├── main.tsx             # React root
-│   ├── App.tsx             # Top-level router for all three surfaces
-│   └── index.css           # Tailwind layers
-├── apps/                    # One folder per surface (pages only)
-│   ├── movaia-admin/       # PartnerList / PartnerCreate / PartnerDetail
-│   ├── partner-admin/      # StaffLogin / SetPassword / Branding / Stores / Analytics
-│   └── kiosk/              # KioskApp (the walk-up scan flow)
-├── shared/                  # Cross-surface building blocks
-│   ├── contexts/           # AuthContext
-│   ├── components/         # ProtectedRoute, LoadingSpinner, KioskRecorder, …
-│   ├── partners/           # PartnerThemeProvider + types (runtime theming)
-│   └── services/           # api.service + per-domain API clients
-├── vite.config.ts           # Plugins, path aliases, dev port, manual chunks
-├── tailwind.config.js
-└── vercel.json              # SPA fallback rewrite
+apps/
+  kiosk/          the walk-up scan flow (/kiosk/:slug)
+  partner-admin/  partner + outlet pages (/partner/*)
+  movaia-admin/   Movaia staff pages (/admin/*)
+shared/
+  services/       API clients (api.service + one per domain)
+  ui/             shared UI (AdminShell, StatCard, charts, …)
+  components/      ProtectedRoute, error/loading, kiosk recorder, …
+  contexts/       AuthContext
+  partners/       PartnerThemeProvider (per-partner theming)
+src/
+  App.tsx         routes
+  main.tsx        app entry (providers)
 ```
 
-### Path aliases
-
-Configured in `vite.config.ts` (mirror them in `tsconfig.json` for editor support):
-
-| Alias      | Resolves to |
-| ---------- | ----------- |
-| `@`        | `./src`     |
-| `@shared`  | `./shared`  |
-| `@apps`    | `./apps`    |
-
----
-
-## Getting started
-
-### Prerequisites
-
-- **Node.js ≥ 20** and npm
-- The [backend](../backend) running and reachable (default `http://localhost:4000`)
-
-### Setup
-
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. Configure environment
-cp .env.example .env
-#    Set VITE_API_URL to your backend's /api base URL
-
-# 3. Start the dev server
-npm run dev          # → http://localhost:5174
-```
-
-> The dev server runs on **5174** (set in `vite.config.ts`) so it can run alongside the
-> main Movaia frontend on 5173.
-
----
-
-## Scripts
-
-| Script            | Description |
-| ----------------- | ----------- |
-| `npm run dev`     | Start the Vite dev server with HMR |
-| `npm run build`   | Type-check (`tsc`) then build to `dist/` |
-| `npm run preview` | Serve the production build locally |
-
----
-
-## Environment variables
-
-Only variables prefixed with **`VITE_`** are exposed to the browser bundle. **Never put
-secrets here** — anything in this file ships to the client.
-
-| Variable       | Required | Description |
-| -------------- | :------: | ----------- |
-| `VITE_API_URL` | ✓        | Backend API base URL, e.g. `http://localhost:4000/api` |
-
----
-
-## Build & deploy
-
-```bash
-npm run build        # outputs static assets to dist/
-```
-
-Deploy `dist/` to any static host. The included [`vercel.json`](vercel.json) rewrites all
-paths to `index.html` so client-side routing works on deep links (e.g. `/kiosk/acme`).
-Set `VITE_API_URL` to the production backend URL in your host's environment settings
-before building.
-
----
-
-## Notes
-
-- Routes are **lazy-loaded** (`React.lazy` + `Suspense`) and split into vendor chunks
-  (`react`, `icons`) via Vite `manualChunks` — keep heavy deps out of the shared bundle.
-- The kiosk surface (`/kiosk/:slug`) is public and themed at runtime by
-  `PartnerThemeProvider`; the admin/partner surfaces are gated by `ProtectedRoute`.
+**Tech:** React 18 · React Router · Vite · Tailwind · axios · lucide-react.
