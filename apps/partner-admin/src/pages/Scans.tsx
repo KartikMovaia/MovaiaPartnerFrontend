@@ -44,6 +44,8 @@ export default function Scans() {
   const [range, setRange] = useState<DateRange>(DEFAULT_RANGE);
   const [storeId, setStoreId] = useState(''); // '' = all branches (partner admin only)
   const [status, setStatus] = useState<'' | ScanStatus>('');
+  const [searchInput, setSearchInput] = useState(''); // immediate value in the box
+  const [search, setSearch] = useState(''); // debounced value sent to the API
   const [page, setPage] = useState(1);
 
   const [branches, setBranches] = useState<Array<{ id: string; name: string }>>([]);
@@ -58,6 +60,15 @@ export default function Scans() {
     storeService.listBranches().then(setBranches).catch(() => setBranches([]));
   }, [isOutlet]);
 
+  // Debounce the search box → one query 300ms after typing stops.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setPage(1);
+      setSearch(searchInput.trim());
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
   const load = useCallback(() => {
     setLoading(true);
     setError(false);
@@ -67,12 +78,13 @@ export default function Scans() {
         pageSize: PAGE_SIZE,
         ...(storeId ? { storeId } : {}),
         ...(status ? { status } : {}),
+        ...(search ? { search } : {}),
         ...toParams(range),
       })
       .then(setData)
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [page, storeId, status, range]);
+  }, [page, storeId, status, search, range]);
   useEffect(() => {
     load();
   }, [load]);
@@ -100,6 +112,7 @@ export default function Scans() {
       const filters = {
         ...(storeId ? { storeId } : {}),
         ...(status ? { status } : {}),
+        ...(search ? { search } : {}),
         ...toParams(range),
       };
       const collected: ScanRow[] = [];
@@ -174,6 +187,15 @@ export default function Scans() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2.5">
+        <input
+          type="search"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search name, email, phone…"
+          aria-label="Search customers"
+          className="h-9 w-56 rounded-[9px] border px-3 text-[13px] text-[#141414] outline-none focus:border-[#ABD037]"
+          style={{ borderColor: '#e4e4e4', background: '#fff' }}
+        />
         {!isOutlet && (
           <Select value={storeId} onChange={onStore} aria-label="Filter by branch">
             <option value="">All branches</option>
@@ -231,23 +253,35 @@ export default function Scans() {
                 <span>Report</span>
               </div>
               {/* Rows */}
-              {rows.map((s, i) => (
-                <div
-                  key={s.id}
-                  className="grid items-center px-5 py-3.5 text-[13px]"
-                  style={{ gridTemplateColumns: cols, borderBottom: i === rows.length - 1 ? 'none' : '1px solid #f5f5f5' }}
-                >
-                  <span style={{ color: '#686868' }}>{fmtDateTime(s.createdAt)}</span>
-                  {showOutlet && <span>{s.store?.name ?? '—'}</span>}
-                  <span style={{ color: '#141414' }}>{s.customerEmail ?? '—'}</span>
-                  <span>
-                    <StatusPill status={s.status} />
-                  </span>
-                  <span>
-                    <ReportFlag value={reportFlag(s)} />
-                  </span>
-                </div>
-              ))}
+              {rows.map((s, i) => {
+                const name = [s.customerFirstName, s.customerLastName].filter(Boolean).join(' ');
+                return (
+                  <div
+                    key={s.id}
+                    className="grid items-center px-5 py-3.5 text-[13px]"
+                    style={{ gridTemplateColumns: cols, borderBottom: i === rows.length - 1 ? 'none' : '1px solid #f5f5f5' }}
+                  >
+                    <span style={{ color: '#686868' }}>{fmtDateTime(s.createdAt)}</span>
+                    {showOutlet && <span>{s.store?.name ?? '—'}</span>}
+                    <span className="min-w-0">
+                      <span className="block truncate" style={{ color: '#141414' }}>
+                        {name || s.customerEmail || '—'}
+                      </span>
+                      {name && s.customerEmail && (
+                        <span className="block truncate text-[11px]" style={{ color: '#9a9a9a' }}>
+                          {s.customerEmail}
+                        </span>
+                      )}
+                    </span>
+                    <span>
+                      <StatusPill status={s.status} />
+                    </span>
+                    <span>
+                      <ReportFlag value={reportFlag(s)} />
+                    </span>
+                  </div>
+                );
+              })}
               {loading && rows.length === 0 && (
                 <div className="px-5 py-6 text-[13px]" style={{ color: '#9a9a9a' }}>
                   Loading scans…
@@ -335,13 +369,14 @@ function csvCell(v: string | null | undefined): string {
 // Build a CSV from the rows and trigger a client-side download. A UTF-8 BOM keeps
 // accented names/emails intact when the file is opened in Excel.
 function downloadScansCsv(rows: ScanRow[], includeBranch: boolean): void {
-  const header = ['Date', ...(includeBranch ? ['Branch'] : []), 'Customer email', 'Customer phone', 'Status', 'Report sent at', 'Analysis ID'];
+  const header = ['Date', ...(includeBranch ? ['Branch'] : []), 'Customer name', 'Customer email', 'Customer phone', 'Status', 'Report sent at', 'Analysis ID'];
   const lines = [header.join(',')];
   for (const s of rows) {
     lines.push(
       [
         s.createdAt,
         ...(includeBranch ? [s.store?.name ?? ''] : []),
+        [s.customerFirstName, s.customerLastName].filter(Boolean).join(' '),
         s.customerEmail ?? '',
         s.customerPhone ?? '',
         s.status,

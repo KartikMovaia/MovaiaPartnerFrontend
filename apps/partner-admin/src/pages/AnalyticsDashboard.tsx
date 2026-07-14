@@ -13,6 +13,7 @@ import StatusPill from '@shared/ui/StatusPill';
 import ReportFlag from '@shared/ui/ReportFlag';
 import AreaChart from '@shared/ui/AreaChart';
 import BarList from '@shared/ui/BarList';
+import ScanOutcomes from '@shared/ui/ScanOutcomes';
 import DateRangePicker from '@shared/ui/DateRangePicker';
 import ErrorState from '@shared/components/ErrorState';
 import { fmtDateTime, fmtNum } from '@shared/ui/format';
@@ -104,6 +105,7 @@ function PartnerView({
   const delivery = total ? ((reports / total) * 100).toFixed(1) : '0.0';
   const perWeek = Math.round(total / rangeWeeks(range, data?.windowDays ?? 1));
   const trend = data?.trend ?? [];
+  const funnel = data?.funnel ?? { pending: 0, processing: 0, completed: 0, failed: 0 };
   const label = rangeLabel(range);
 
   return (
@@ -132,6 +134,9 @@ function PartnerView({
         <StatCard label="Active outlets" value={String(activeOutlets)} sub="with scans" />
         <StatCard label="Avg / week" value={String(perWeek)} sub={label} />
       </div>
+
+      {/* Scan outcomes */}
+      <ScanOutcomes funnel={funnel} label={label} />
 
       {/* Charts */}
       <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-[1.6fr_1fr]">
@@ -174,6 +179,7 @@ function OutletView({
   const reports = data?.totals.reportsSent ?? 0;
   const delivery = total ? ((reports / total) * 100).toFixed(1) : '0.0';
   const perWeek = Math.round(total / rangeWeeks(range, data?.windowDays ?? 1));
+  const funnel = data?.funnel ?? { pending: 0, processing: 0, completed: 0, failed: 0 };
   const label = rangeLabel(range);
 
   return (
@@ -199,6 +205,9 @@ function OutletView({
         <StatCard label="Reports sent" value={fmtNum(reports)} sub={`${delivery}%`} />
         <StatCard label="Avg / week" value={String(perWeek)} sub={label} />
       </div>
+
+      {/* Scan outcomes (scoped) */}
+      <ScanOutcomes funnel={funnel} label={label} />
 
       {/* Recent scans (scoped) */}
       <ScansTable scans={scans} showOutlet={false} title={`Recent scans · ${storeName}`} viewAllTo="/partner/scans" />

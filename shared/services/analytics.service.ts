@@ -27,10 +27,13 @@ export interface AnalyticsOverview {
   trend: TrendPoint[];
 }
 
-// One scan row. Customer contact is PII.
+// One scan row. Customer contact is PII. Name fields are returned by
+// /analytics/scans; other endpoints (e.g. admin recent-scans) may omit them.
 export interface ScanRow {
   id: string;
   storeId: string | null;
+  customerFirstName?: string | null;
+  customerLastName?: string | null;
   customerEmail: string | null;
   customerPhone: string | null;
   status: ScanStatus;
@@ -55,7 +58,7 @@ export const analyticsService = {
     return data as AnalyticsOverview;
   },
   async scans(
-    params: { page?: number; pageSize?: number; storeId?: string; status?: ScanStatus; from?: string; to?: string } = {}
+    params: { page?: number; pageSize?: number; storeId?: string; status?: ScanStatus; from?: string; to?: string; search?: string } = {}
   ): Promise<ScanPage> {
     const { data } = await api.get('/analytics/scans', { params });
     return data as ScanPage;
@@ -89,10 +92,20 @@ export interface PartnerAnalyticsDetail {
   recentScans: ScanRow[];
 }
 
+export interface PlatformFunnel {
+  funnel: { pending: number; processing: number; completed: number; failed: number };
+  submitted: number;
+}
+
 export const adminAnalyticsService = {
   async partnersOverview(range: RangeParams = {}): Promise<PartnersOverview> {
     const { data } = await api.get('/admin-analytics/partners', { params: range });
     return data as PartnersOverview;
+  },
+  // Platform-wide scan funnel (live tenant read; separate from the rollup overview).
+  async funnel(range: RangeParams = {}): Promise<PlatformFunnel> {
+    const { data } = await api.get('/admin-analytics/funnel', { params: range });
+    return data as PlatformFunnel;
   },
   async partnerDetail(id: string): Promise<PartnerAnalyticsDetail> {
     const { data } = await api.get(`/admin-analytics/partners/${id}`);

@@ -9,11 +9,12 @@ import { useAuth } from '@shared/contexts/AuthContext';
 import StatCard from '@shared/ui/StatCard';
 import AreaChart from '@shared/ui/AreaChart';
 import BarList from '@shared/ui/BarList';
+import ScanOutcomes from '@shared/ui/ScanOutcomes';
 import DateRangePicker from '@shared/ui/DateRangePicker';
 import LoadingSpinner from '@shared/components/LoadingSpinner';
 import ErrorState from '@shared/components/ErrorState';
 import { fmtNum } from '@shared/ui/format';
-import { adminAnalyticsService, PartnersOverview } from '@shared/services/analytics.service';
+import { adminAnalyticsService, PartnersOverview, PlatformFunnel } from '@shared/services/analytics.service';
 import { DateRange, DEFAULT_RANGE, rangeLabel, toParams } from '@shared/utils/dateRange';
 
 const TOP_N = 5;
@@ -22,11 +23,14 @@ export default function MovaiaDashboard() {
   const { staff, logout } = useAuth();
   const [range, setRange] = useState<DateRange>(DEFAULT_RANGE);
   const [data, setData] = useState<PartnersOverview | null>(null);
+  const [funnel, setFunnel] = useState<PlatformFunnel | null>(null);
   const [error, setError] = useState(false);
 
   const load = useCallback(() => {
     setError(false);
     adminAnalyticsService.partnersOverview(toParams(range)).then(setData).catch(() => setError(true));
+    // Funnel is a live cross-tenant read — best-effort, so a failure here doesn't blank the page.
+    adminAnalyticsService.funnel(toParams(range)).then(setFunnel).catch(() => setFunnel(null));
   }, [range]);
   useEffect(() => {
     load();
@@ -76,6 +80,9 @@ export default function MovaiaDashboard() {
             <StatCard label="Reports sent" value={fmtNum(reports)} sub={`${delivery}% delivery`} />
             <StatCard label="Active outlets" value={fmtNum(totalOutlets)} sub={`across ${fmtNum(data.totals.partners)} partners`} />
           </div>
+
+          {/* Scan outcomes (platform-wide, live) */}
+          {funnel && <ScanOutcomes funnel={funnel.funnel} label={label} />}
 
           {/* Charts */}
           <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-[1.6fr_1fr]">
