@@ -15,12 +15,10 @@
   },
   "welcome": {
     "eyebrow": "跑步步態分析",
-    "title": "來分析您的跑姿吧。",
-    "desc": "輸入您的資料，我們會將您的個人分析報告以電子郵件寄給您 — 通常只需幾分鐘。",
+    "desc": "請輸入您的資料",
     "firstName": "名字",
     "lastName": "姓氏",
     "email": "電子郵件地址",
-    "phone": "電話號碼（選填）",
     "height": "身高",
     "weight": "體重",
     "heightCmAria": "身高（公分）",
@@ -31,8 +29,10 @@
     "weightUnitAria": "體重單位",
     "ft": "ft",
     "in": "in",
-    "helper": "我們會將報告寄到這個信箱。身高與體重有助於為您量身打造分析；電話為選填。",
+    "helperEmail": "我們會將報告寄到這個信箱。",
+    "helper": "身高與體重有助於調整您的分析。",
     "consent": "我同意接受錄影，並同意 Movaia 建立帳號以提供我的分析，並遵守<bold>服務條款與隱私權政策</bold>。",
+    "next": "下一步",
     "start": "開始",
     "settingUp": "設定中…",
     "footer": "繼續即表示您同意 Movaia 的服務條款與隱私權政策。您的資料絕不會與其他顧客分享。",
@@ -41,7 +41,6 @@
       "lastName": "請輸入您的姓氏。",
       "emailRequired": "請輸入您的電子郵件，以便我們寄送報告給您。",
       "emailInvalid": "請輸入有效的電子郵件地址。",
-      "phone": "請輸入有效的電話號碼，或留白。",
       "heightRequired": "請輸入您的身高。",
       "heightInvalid": "請輸入合理的身高。",
       "weightRequired": "請輸入您的體重。",
@@ -50,9 +49,7 @@
       "generic": "發生錯誤。請再試一次，或詢問工作人員。"
     },
     "hero": {
-      "titleAccent": "掌握您的跑步力學。",
-      "titleRest": "跑得更好。",
-      "desc": "運用 AI 洞察，提升您的表現並預防運動傷害。",
+      "titleAccent": "來分析您的跑姿吧。",
       "features": {
         "analysis": {
           "title": "AI 分析",
@@ -79,31 +76,22 @@
   },
   "getReady": {
     "step": "第 1 步，共 3 步 · 準備開始",
-    "title": "設定您的跑步機跑步",
-    "subtitle": "兩個簡單步驟，接著我們會錄製一段簡短的側面影片。",
-    "card1": {
-      "title": "在跑步機上站定位置",
-      "body": "開始前請先熱身，並調整到輕鬆、自然的跑步節奏。",
-      "illo": "[ 插圖：跑者在跑步機上 ]"
-    },
-    "card2": {
-      "title": "以側面入鏡",
-      "body": "將 iPad 直立擺放在您的側邊，讓您從頭到腳都完整入鏡。",
-      "illo": "[ 插圖：側面取景 ]"
-    },
+    "title": "開始跑步吧",
+    "subtitle": "<bold>請先熱身</bold>",
+    "imageAlt": "以側面入鏡",
     "whatNext": "接下來會發生什麼",
     "next": {
       "getSet": {
-        "title": "{{count}} 秒準備時間",
+        "title": "{{count}} 秒後開始錄影",
         "body": "開始前，請逐漸加速到您自然的跑步節奏。"
       },
       "oneBeep": {
         "title": "一聲嗶 = 開始錄影",
-        "body": "繼續跑就好 — 影片約 {{count}} 秒。"
+        "body": "繼續跑就好，我們會錄製大約 {{count}} 秒。"
       },
       "twoBeeps": {
         "title": "兩聲嗶 = 錄影結束",
-        "body": "完成囉 — 請放慢速度並走下跑步機。"
+        "body": "完成了，請放慢速度並查看影片。"
       }
     },
     "cta": "我準備好了 — 設定相機"

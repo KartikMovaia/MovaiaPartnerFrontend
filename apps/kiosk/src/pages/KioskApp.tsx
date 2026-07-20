@@ -51,7 +51,6 @@ interface IdentifyDetails {
   firstName: string;
   lastName: string;
   email: string;
-  phone: string;
   heightCm: number;
   weightKg: number;
 }
@@ -60,6 +59,8 @@ const MOVAIA_LOGO = '/assets/movaia-logo.png';
 // Brand hero shown beside the details form on wider screens — mirrors the
 // Movaia login page's right panel (full-bleed photo + tagline + feature list).
 const WELCOME_IMAGE = '/assets/kiosk-welcome.jpg';
+// Get-ready illustration: a runner framed side-on, set up and ready to run.
+const SETUP_IMAGE = '/assets/kiosk-setup.png';
 
 // The three selling points listed over the hero photo (icons match the login).
 // Text is pulled from the `welcome.hero.features.<key>` catalog entries at render.
@@ -313,7 +314,6 @@ function KioskFlow() {
       firstName: d.firstName,
       lastName: d.lastName,
       email: d.email,
-      phone: d.phone || undefined,
       heightCm: d.heightCm,
       weightKg: d.weightKg,
       consent: true,
@@ -540,10 +540,12 @@ function SegToggle<T extends string>({
 
 function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: IdentifyDetails) => Promise<void> }) {
   const { t } = useTranslation('kiosk');
+  // The form is split in two so neither panel feels crowded: who you are, then
+  // your body measurements + consent.
+  const [formStep, setFormStep] = useState<1 | 2>(1);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [heightUnit, setHeightUnit] = useState<HeightUnit>('cm');
   const [heightCm, setHeightCm] = useState('');
   const [heightFt, setHeightFt] = useState('');
@@ -558,9 +560,20 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
   const cm = heightToCm(heightUnit, heightCm, heightFt, heightIn);
   const kg = weightToKg(weightUnit, weight);
   const heightValid = cm !== null && cm >= HEIGHT_MIN_CM && cm <= HEIGHT_MAX_CM;
+  const whoValid = firstName.trim() !== '' && lastName.trim() !== '' && emailValid;
   const weightValid = kg !== null && kg >= WEIGHT_MIN_KG && kg <= WEIGHT_MAX_KG;
-  const ready =
-    firstName.trim() !== '' && lastName.trim() !== '' && emailValid && heightValid && weightValid && consent;
+  const ready = whoValid && heightValid && weightValid && consent;
+
+  // Step 1 → 2. Re-checks the same fields `start` does, so a bad value can't
+  // slip past the disabled button and only surface at submit.
+  const next = () => {
+    if (!firstName.trim()) return setError(t('welcome.errors.firstName'));
+    if (!lastName.trim()) return setError(t('welcome.errors.lastName'));
+    if (!email.trim()) return setError(t('welcome.errors.emailRequired'));
+    if (!emailValid) return setError(t('welcome.errors.emailInvalid'));
+    setError(null);
+    setFormStep(2);
+  };
 
   const start = async () => {
     if (busy) return;
@@ -568,7 +581,6 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
     if (!lastName.trim()) return setError(t('welcome.errors.lastName'));
     if (!email.trim()) return setError(t('welcome.errors.emailRequired'));
     if (!emailValid) return setError(t('welcome.errors.emailInvalid'));
-    if (phone.trim() && phone.replace(/\D/g, '').length < 7) return setError(t('welcome.errors.phone'));
     if (cm === null) return setError(t('welcome.errors.heightRequired'));
     if (!heightValid) return setError(t('welcome.errors.heightInvalid'));
     if (kg === null) return setError(t('welcome.errors.weightRequired'));
@@ -581,7 +593,6 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.trim(),
-        phone: phone.trim(),
         heightCm: cm,
         weightKg: kg,
       });
@@ -599,81 +610,9 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
 
   return (
     <div className="flex min-h-screen w-full bg-white">
-      {/* Left: intro + details form. This is the only column below `lg`; the
-          photo panel to the right appears once there's room to spare. `min-w-0`
-          lets this flex column shrink below its content's intrinsic width so
-          the header/inputs never overflow on narrow screens. */}
-      <div className="flex min-h-screen flex-1 flex-col min-w-0">
-        <KioskHeader theme={theme} />
-        <div className="flex flex-1 flex-col justify-center gap-7 px-6 sm:px-10 lg:px-12 xl:px-16 2xl:px-[90px]">
-        <div className="flex flex-col gap-2.5">
-          <span className="text-[14px]" style={eyebrow}>{t('welcome.eyebrow')}</span>
-          <h1 className="m-0 text-[46px] font-extrabold leading-[1.05]" style={{ letterSpacing: '-1px' }}>
-            {t('welcome.title')}
-          </h1>
-          <p className="m-0 max-w-[560px] text-[19px] leading-[1.5]" style={{ color: '#686868' }}>
-            {t('welcome.desc')}
-          </p>
-        </div>
-        <div className="flex max-w-[620px] flex-col gap-3.5">
-          {/* Name — first + last, side by side */}
-          <div className="flex gap-3.5">
-            <input className={`${input} min-w-0 flex-1`} aria-label={t('welcome.firstName')} autoComplete="off" style={{ borderColor: '#e4e4e4' }} placeholder={t('welcome.firstName')} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-            <input className={`${input} min-w-0 flex-1`} aria-label={t('welcome.lastName')} autoComplete="off" style={{ borderColor: '#e4e4e4' }} placeholder={t('welcome.lastName')} value={lastName} onChange={(e) => setLastName(e.target.value)} />
-          </div>
-          <input className={input} type="email" inputMode="email" autoComplete="off" aria-label={t('welcome.email')} style={{ borderColor: 'var(--brand-primary)' }} placeholder={t('welcome.email')} value={email} onChange={(e) => setEmail(e.target.value)} />
-          <input className={input} type="tel" inputMode="tel" autoComplete="off" aria-label={t('welcome.phone')} style={{ borderColor: '#e4e4e4' }} placeholder={t('welcome.phone')} value={phone} onChange={(e) => setPhone(e.target.value)} />
-          {/* Height + weight — value(s) with a unit toggle each */}
-          <div className="flex gap-3.5">
-            <div className="flex min-w-0 flex-1 gap-2">
-              {heightUnit === 'cm' ? (
-                <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="decimal" aria-label={t('welcome.heightCmAria')} placeholder={t('welcome.height')} value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
-              ) : (
-                <>
-                  <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="numeric" aria-label={t('welcome.heightFtAria')} placeholder={t('welcome.ft')} value={heightFt} onChange={(e) => setHeightFt(e.target.value)} />
-                  <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="numeric" aria-label={t('welcome.heightInAria')} placeholder={t('welcome.in')} value={heightIn} onChange={(e) => setHeightIn(e.target.value)} />
-                </>
-              )}
-              <SegToggle ariaLabel={t('welcome.heightUnitAria')} value={heightUnit} options={HEIGHT_UNITS} onChange={setHeightUnit} />
-            </div>
-            <div className="flex min-w-0 flex-1 gap-2">
-              <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="decimal" aria-label={t('welcome.weightAria')} placeholder={t('welcome.weight')} value={weight} onChange={(e) => setWeight(e.target.value)} />
-              <SegToggle ariaLabel={t('welcome.weightUnitAria')} value={weightUnit} options={WEIGHT_UNITS} onChange={setWeightUnit} />
-            </div>
-          </div>
-          <span className="pl-1 text-[14px]" style={{ color: '#9a9a9a' }}>{t('welcome.helper')}</span>
-          <label className="flex cursor-pointer items-start gap-3 pl-1 pt-1">
-            <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-6 w-6 flex-none" style={{ accentColor: 'var(--brand-primary)' }} />
-            <span className="text-[15px] leading-[1.45]" style={{ color: '#686868' }}>
-              <Trans t={t} i18nKey="welcome.consent" components={{ bold: <b style={{ color: '#141414' }} /> }} />
-            </span>
-          </label>
-          {error && (
-            <span className="pl-1 text-[15px]" style={{ color: '#c5352b' }}>
-              {error}
-            </span>
-          )}
-        </div>
-        <button
-          onClick={start}
-          disabled={!ready || busy}
-          className="flex h-[72px] max-w-[620px] items-center justify-center gap-3 rounded-[14px] text-[22px] font-bold disabled:opacity-40"
-          style={brandBtn}
-        >
-          {busy ? t('welcome.settingUp') : `${t('welcome.start')}  →`}
-        </button>
-        </div>
-        <div className="px-6 pb-[30px] pt-[22px] sm:px-10 lg:px-12 xl:px-16 2xl:px-[90px]">
-          <span className="text-[13px]" style={{ color: '#9a9a9a' }}>
-            {t('welcome.footer')}
-          </span>
-        </div>
-      </div>
-
-      {/* Right: brand hero — mirrors the Movaia login's right panel. Full-bleed
-          photo with a dark bottom gradient, then the tagline + feature list
-          anchored to the bottom. Desktop/tablet only; below `lg` it's hidden
-          and the form takes the full width, so nothing is lost on phones. */}
+      {/* Left: brand hero — full-bleed photo with a dark bottom gradient, then
+          the tagline + feature list anchored to the bottom. Desktop/tablet only;
+          below `lg` it's hidden and the form takes the full width. */}
       <div
         className="relative hidden flex-col justify-end lg:flex lg:flex-1"
         style={{
@@ -694,14 +633,10 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
         />
 
         <div className="relative z-10 p-12 pb-14">
-          <h3 className="mb-4 text-5xl font-extrabold leading-tight">
-            <span style={{ color: 'var(--brand-primary)' }}>{t('welcome.hero.titleAccent')}</span>
-            <br />
-            <span className="text-white">{t('welcome.hero.titleRest')}</span>
-          </h3>
-          <p className="mb-8 max-w-sm text-base text-white/80">
-            {t('welcome.hero.desc')}
-          </p>
+          {/* The hero now carries the screen's main title, so it's the h1. */}
+          <h1 className="mb-8 text-5xl font-extrabold leading-tight" style={{ color: 'var(--brand-primary)' }}>
+            {t('welcome.hero.titleAccent')}
+          </h1>
 
           <div className="space-y-5">
             {HERO_FEATURES.map((f) => (
@@ -719,6 +654,85 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Right: intro + details form. This is the only column below `lg`; the
+          photo panel to the left appears once there's room to spare. `min-w-0`
+          lets this flex column shrink below its content's intrinsic width so
+          the header/inputs never overflow on narrow screens. */}
+      <div className="flex min-h-screen flex-1 flex-col min-w-0">
+        <KioskHeader theme={theme} />
+        <div className="flex flex-1 flex-col justify-center gap-7 px-6 sm:px-10 lg:px-12 xl:px-16 2xl:px-[90px]">
+        <div className="flex flex-col gap-2.5">
+          <span className="text-[14px]" style={eyebrow}>{t('welcome.eyebrow')}</span>
+          <p className="m-0 max-w-[560px] text-[19px] leading-[1.5]" style={{ color: '#686868' }}>
+            {t('welcome.desc')}
+          </p>
+        </div>
+        <div className="flex max-w-[620px] flex-col gap-3.5">
+          {formStep === 1 ? (
+            <>
+              {/* Name — first + last, side by side */}
+              <div className="flex gap-3.5">
+                <input className={`${input} min-w-0 flex-1`} aria-label={t('welcome.firstName')} autoComplete="off" style={{ borderColor: '#e4e4e4' }} placeholder={t('welcome.firstName')} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                <input className={`${input} min-w-0 flex-1`} aria-label={t('welcome.lastName')} autoComplete="off" style={{ borderColor: '#e4e4e4' }} placeholder={t('welcome.lastName')} value={lastName} onChange={(e) => setLastName(e.target.value)} />
+              </div>
+              <input className={input} type="email" inputMode="email" autoComplete="off" aria-label={t('welcome.email')} style={{ borderColor: 'var(--brand-primary)' }} placeholder={t('welcome.email')} value={email} onChange={(e) => setEmail(e.target.value)} />
+              <span className="pl-1 text-[14px]" style={{ color: '#9a9a9a' }}>{t('welcome.helperEmail')}</span>
+            </>
+          ) : (
+            <>
+              {/* Height + weight — value(s) with a unit toggle each */}
+              <div className="flex gap-3.5">
+                <div className="flex min-w-0 flex-1 gap-2">
+                  {heightUnit === 'cm' ? (
+                    <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="decimal" aria-label={t('welcome.heightCmAria')} placeholder={t('welcome.height')} value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
+                  ) : (
+                    <>
+                      <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="numeric" aria-label={t('welcome.heightFtAria')} placeholder={t('welcome.ft')} value={heightFt} onChange={(e) => setHeightFt(e.target.value)} />
+                      <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="numeric" aria-label={t('welcome.heightInAria')} placeholder={t('welcome.in')} value={heightIn} onChange={(e) => setHeightIn(e.target.value)} />
+                    </>
+                  )}
+                  <SegToggle ariaLabel={t('welcome.heightUnitAria')} value={heightUnit} options={HEIGHT_UNITS} onChange={setHeightUnit} />
+                </div>
+                <div className="flex min-w-0 flex-1 gap-2">
+                  <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="decimal" aria-label={t('welcome.weightAria')} placeholder={t('welcome.weight')} value={weight} onChange={(e) => setWeight(e.target.value)} />
+                  <SegToggle ariaLabel={t('welcome.weightUnitAria')} value={weightUnit} options={WEIGHT_UNITS} onChange={setWeightUnit} />
+                </div>
+              </div>
+              <span className="pl-1 text-[14px]" style={{ color: '#9a9a9a' }}>{t('welcome.helper')}</span>
+              <label className="flex cursor-pointer items-start gap-3 pl-1 pt-1">
+                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-6 w-6 flex-none" style={{ accentColor: 'var(--brand-primary)' }} />
+                <span className="text-[15px] leading-[1.45]" style={{ color: '#686868' }}>
+                  <Trans t={t} i18nKey="welcome.consent" components={{ bold: <b style={{ color: '#141414' }} /> }} />
+                </span>
+              </label>
+            </>
+          )}
+          {error && (
+            <span className="pl-1 text-[15px]" style={{ color: '#c5352b' }}>
+              {error}
+            </span>
+          )}
+        </div>
+        <button
+          onClick={formStep === 1 ? next : start}
+          disabled={formStep === 1 ? !whoValid : !ready || busy}
+          className="flex h-[72px] max-w-[620px] items-center justify-center gap-3 rounded-[14px] text-[22px] font-bold disabled:opacity-40"
+          style={brandBtn}
+        >
+          {formStep === 1
+            ? `${t('welcome.next')}  →`
+            : busy
+              ? t('welcome.settingUp')
+              : `${t('welcome.start')}  →`}
+        </button>
+        </div>
+        <div className="px-6 pb-[30px] pt-[22px] sm:px-10 lg:px-12 xl:px-16 2xl:px-[90px]">
+          <span className="text-[13px]" style={{ color: '#9a9a9a' }}>
+            {t('welcome.footer')}
+          </span>
         </div>
       </div>
     </div>
@@ -776,14 +790,8 @@ function Returning({
 
 function GetReady({ onReady }: { onReady: () => void }) {
   const { t } = useTranslation('kiosk');
-  const card = 'flex flex-1 flex-col gap-4 rounded-[18px] border-2 p-[26px]';
-  const numChip = 'flex h-[52px] w-[52px] items-center justify-center rounded-[14px] text-[22px] font-extrabold';
-  const chipStyle = { background: 'color-mix(in srgb, var(--brand-primary) 14%, #fff)', color: 'var(--brand-primary)' };
-  const illo = 'mt-2 flex min-h-[150px] flex-1 items-center justify-center rounded-[12px] font-mono text-xs';
-  const illoStyle = {
-    color: '#9a9a9a',
-    background: 'repeating-linear-gradient(135deg,#f4f4f4,#f4f4f4 11px,#eee 11px,#eee 22px)',
-  };
+  const numChip = 'flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-[17px] font-extrabold';
+  const chipStyle = { background: 'color-mix(in srgb, var(--brand-primary) 16%, #fff)', color: 'var(--brand-primary)' };
 
   return (
     <Screen>
@@ -797,40 +805,47 @@ function GetReady({ onReady }: { onReady: () => void }) {
           </div>
         </div>
         <h1 className="mb-1 mt-3.5 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>{t('getReady.title')}</h1>
-        <p className="mb-[26px] text-[19px]" style={{ color: '#686868' }}>{t('getReady.subtitle')}</p>
+        <p className="mb-[26px] text-[19px]" style={{ color: '#686868' }}>
+          <Trans t={t} i18nKey="getReady.subtitle" components={{ bold: <b style={{ color: '#141414' }} /> }} />
+        </p>
+        {/* Illustration and recording steps share a row: the landscape iPad has
+            far more width than height, so side-by-side buys the artwork height. */}
         <div className="grid flex-1 grid-cols-1 gap-[22px] md:grid-cols-2">
-          {[
-            { n: 1, title: t('getReady.card1.title'), body: t('getReady.card1.body'), label: t('getReady.card1.illo') },
-            { n: 2, title: t('getReady.card2.title'), body: t('getReady.card2.body'), label: t('getReady.card2.illo') },
-          ].map((c) => (
-            <div key={c.n} className={card} style={{ borderColor: '#eee' }}>
-              <span className={numChip} style={chipStyle}>{c.n}</span>
-              <b className="text-[22px]">{c.title}</b>
-              <p className="m-0 text-[16px] leading-[1.55]" style={{ color: '#686868' }}>{c.body}</p>
-              <div className={illo} style={illoStyle}>{c.label}</div>
+          {/* Framing illustration — a runner set up side-on, ready to run.
+              Absolutely positioned so its intrinsic size can't feed back into
+              the layout and push the CTA off a short iPad. */}
+          <div className="relative min-h-[200px] overflow-hidden rounded-[18px]">
+            <img
+              src={SETUP_IMAGE}
+              alt={t('getReady.imageAlt')}
+              className="absolute inset-0 h-full w-full object-contain"
+            />
+          </div>
+          {/* What happens during recording — prep time + the beep signals.
+              Centred vertically: the panel stretches to the illustration's
+              height, so short step lists would otherwise sit in dead space. */}
+          <div
+            className="flex flex-col justify-center rounded-[16px] px-7 py-[22px]"
+            style={{ background: 'color-mix(in srgb, var(--brand-primary) 7%, #fff)' }}
+          >
+            <b className="text-[13px] font-bold uppercase tracking-[1.5px]" style={{ color: '#141414' }}>
+              {t('getReady.whatNext')}
+            </b>
+            <div className="mt-4 flex flex-col gap-5">
+              {[
+                { n: 1, title: t('getReady.next.getSet.title', { count: SETUP_SECONDS }), body: t('getReady.next.getSet.body') },
+                { n: 2, title: t('getReady.next.oneBeep.title'), body: t('getReady.next.oneBeep.body', { count: RECORD_SECONDS }) },
+                { n: 3, title: t('getReady.next.twoBeeps.title'), body: t('getReady.next.twoBeeps.body') },
+              ].map((s) => (
+                <div key={s.n} className="flex gap-4">
+                  <span className={numChip} style={chipStyle}>{s.n}</span>
+                  <div className="flex flex-col gap-1">
+                    <b className="text-[16px]" style={{ color: '#141414' }}>{s.title}</b>
+                    <span className="text-[15px] leading-[1.45]" style={{ color: '#686868' }}>{s.body}</span>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        {/* What happens during recording — prep time + the beep signals */}
-        <div
-          className="mt-5 rounded-[16px] px-7 py-[22px]"
-          style={{ background: 'color-mix(in srgb, var(--brand-primary) 7%, #fff)' }}
-        >
-          <b className="text-[13px] font-bold uppercase tracking-[1.5px]" style={{ color: '#141414' }}>
-            {t('getReady.whatNext')}
-          </b>
-          <div className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-3">
-            {[
-              { icon: '⏱️', title: t('getReady.next.getSet.title', { count: SETUP_SECONDS }), body: t('getReady.next.getSet.body') },
-              { icon: '🔊', title: t('getReady.next.oneBeep.title'), body: t('getReady.next.oneBeep.body', { count: RECORD_SECONDS }) },
-              { icon: '🔊🔊', title: t('getReady.next.twoBeeps.title'), body: t('getReady.next.twoBeeps.body') },
-            ].map((s) => (
-              <div key={s.title} className="flex flex-col gap-2">
-                <span className="text-[28px] leading-none">{s.icon}</span>
-                <b className="text-[16px]" style={{ color: '#141414' }}>{s.title}</b>
-                <span className="text-[15px] leading-[1.45]" style={{ color: '#686868' }}>{s.body}</span>
-              </div>
-            ))}
           </div>
         </div>
         <button
