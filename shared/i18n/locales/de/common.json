@@ -8,7 +8,9 @@
     "tryAgain": "Erneut versuchen",
     "cancel": "Abbrechen",
     "confirm": "Bestätigen",
-    "signOut": "Abmelden"
+    "signOut": "Abmelden",
+    "openMenu": "Menü öffnen",
+    "closeMenu": "Menü schließen"
   },
   "errorState": {
     "generic": "Beim Laden dieser Daten ist ein Fehler aufgetreten."

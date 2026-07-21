@@ -147,7 +147,7 @@ export default function PartnerList() {
       ) : (
         <div className="mx-auto flex w-full max-w-[900px] flex-col gap-[18px]">
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="mb-1 text-[22px] font-extrabold tracking-[-.4px]">Partners</h1>
               <p className="text-[13px] text-[#686868]">
@@ -159,7 +159,7 @@ export default function PartnerList() {
             <button
               type="button"
               onClick={() => setShowForm((v) => !v)}
-              className="h-[42px] rounded-[10px] px-5 text-sm font-bold"
+              className="h-[42px] flex-none rounded-[10px] px-5 text-sm font-bold"
               style={{ background: '#ABD037', color: '#1c2b00' }}
             >
               + Add partner
@@ -255,59 +255,114 @@ export default function PartnerList() {
             })}
           </div>
 
-          {/* Partners table */}
-          <div className="overflow-hidden rounded-[14px] border border-[#ececec] bg-white">
-            <div className="grid grid-cols-[1.6fr_1fr_1fr_1fr_.6fr] border-b border-[#f0f0f0] bg-[#fafafa] px-5 py-[11px] text-[11px] font-bold uppercase tracking-[.5px] text-[#9a9a9a]">
-              <SortHeader label="Partner" col="name" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-              <SortHeader label="Outlets" col="storeCount" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-              <SortHeader label="Analyses" col="scanCount" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-              <span>Status</span>
-              <span />
+          {/* Empty states (shared by both layouts) */}
+          {partners.length === 0 ? (
+            <div className="rounded-[14px] border border-[#ececec] bg-white px-5 py-8 text-center text-sm text-[#9a9a9a]">
+              No partners yet.
             </div>
-            {visible.map((p, i) => (
-              <div
-                key={p.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => navigate(`/admin/partners/${p.id}`)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    navigate(`/admin/partners/${p.id}`);
-                  }
-                }}
-                className={`grid cursor-pointer grid-cols-[1.6fr_1fr_1fr_1fr_.6fr] items-center px-5 py-3.5 text-[13px] outline-none transition-colors hover:bg-[#fafafa] focus-visible:bg-[#fafafa] ${
-                  i < visible.length - 1 ? 'border-b border-[#f5f5f5]' : ''
-                }`}
-              >
-                <div className="flex min-w-0 flex-col">
-                  <b className="truncate">{p.name}</b>
-                  <span className="truncate font-mono text-[11px] text-[#9a9a9a]">{p.slug}</span>
+          ) : visible.length === 0 ? (
+            <div className="rounded-[14px] border border-[#ececec] bg-white px-5 py-8 text-center text-sm text-[#9a9a9a]">
+              No partners match this filter.
+            </div>
+          ) : (
+            <>
+              {/* Partners table (tablet / desktop) */}
+              <div className="hidden overflow-hidden rounded-[14px] border border-[#ececec] bg-white sm:block">
+                <div className="grid grid-cols-[1.6fr_1fr_1fr_1fr_.6fr] border-b border-[#f0f0f0] bg-[#fafafa] px-5 py-[11px] text-[11px] font-bold uppercase tracking-[.5px] text-[#9a9a9a]">
+                  <SortHeader label="Partner" col="name" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <SortHeader label="Outlets" col="storeCount" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <SortHeader label="Analyses" col="scanCount" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <span>Status</span>
+                  <span />
                 </div>
-                <span>{fmtNum(p.storeCount)}</span>
-                <span>{fmtNum(p.scanCount)}</span>
-                <span>
-                  <StatusPill status={p.status} />
-                </span>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    remove(p);
-                  }}
-                  className="text-right text-xs font-semibold text-[#b23a34]"
-                >
-                  Remove
-                </button>
+                {visible.map((p, i) => (
+                  <div
+                    key={p.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => navigate(`/admin/partners/${p.id}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        navigate(`/admin/partners/${p.id}`);
+                      }
+                    }}
+                    className={`grid cursor-pointer grid-cols-[1.6fr_1fr_1fr_1fr_.6fr] items-center px-5 py-3.5 text-[13px] outline-none transition-colors hover:bg-[#fafafa] focus-visible:bg-[#fafafa] ${
+                      i < visible.length - 1 ? 'border-b border-[#f5f5f5]' : ''
+                    }`}
+                  >
+                    <div className="flex min-w-0 flex-col">
+                      <b className="truncate">{p.name}</b>
+                      <span className="truncate font-mono text-[11px] text-[#9a9a9a]">{p.slug}</span>
+                    </div>
+                    <span>{fmtNum(p.storeCount)}</span>
+                    <span>{fmtNum(p.scanCount)}</span>
+                    <span>
+                      <StatusPill status={p.status} />
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        remove(p);
+                      }}
+                      className="text-right text-xs font-semibold text-[#b23a34]"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-            {partners.length === 0 && (
-              <div className="px-5 py-8 text-center text-sm text-[#9a9a9a]">No partners yet.</div>
-            )}
-            {partners.length > 0 && visible.length === 0 && (
-              <div className="px-5 py-8 text-center text-sm text-[#9a9a9a]">No partners match this filter.</div>
-            )}
-          </div>
+
+              {/* Partner cards (phones) */}
+              <ul className="flex flex-col gap-3 sm:hidden">
+                {visible.map((p) => (
+                  <li key={p.id}>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => navigate(`/admin/partners/${p.id}`)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          navigate(`/admin/partners/${p.id}`);
+                        }
+                      }}
+                      className="flex cursor-pointer flex-col gap-2.5 rounded-[14px] border border-[#ececec] bg-white p-4 outline-none transition-colors focus-visible:border-[#cfe08c]"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <b className="block truncate text-sm">{p.name}</b>
+                          <span className="block truncate font-mono text-[11px] text-[#9a9a9a]">{p.slug}</span>
+                        </div>
+                        <StatusPill status={p.status} />
+                      </div>
+                      <div className="flex items-center justify-between gap-3 text-[13px]">
+                        <div className="flex gap-4 text-[#686868]">
+                          <span>
+                            <b className="text-[#141414]">{fmtNum(p.storeCount)}</b> outlets
+                          </span>
+                          <span>
+                            <b className="text-[#141414]">{fmtNum(p.scanCount)}</b> analyses
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            remove(p);
+                          }}
+                          className="flex-none text-xs font-semibold text-[#b23a34]"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
       )}
     </AdminShell>

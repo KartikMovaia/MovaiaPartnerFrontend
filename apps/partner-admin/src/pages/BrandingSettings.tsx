@@ -97,7 +97,7 @@ export default function BrandingSettings() {
     <AdminShell variant="partner" nav={NAV} user={shellUserFromStaff(staff)} onSignOut={logout}>
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <h1 className="mb-1 text-2xl font-extrabold tracking-[-.4px]">{t('branding.title')}</h1>
           <p className="text-[13px]" style={{ color: '#686868' }}>
             {t('branding.subtitle')}
@@ -111,10 +111,10 @@ export default function BrandingSettings() {
                 href={kioskUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-[7px] bg-[#f2f2f2] px-2 py-1 text-[12px] text-[#141414] hover:bg-[#e9e9e9] hover:underline"
+                className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-[7px] bg-[#f2f2f2] px-2 py-1 text-[12px] text-[#141414] hover:bg-[#e9e9e9] hover:underline"
               >
-                {kioskUrl}
-                <ExternalLink size={12} />
+                <span className="truncate">{kioskUrl}</span>
+                <ExternalLink size={12} className="flex-none" />
               </a>
               <button
                 type="button"

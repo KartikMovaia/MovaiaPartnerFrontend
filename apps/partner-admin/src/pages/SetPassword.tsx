@@ -44,8 +44,8 @@ export default function SetPassword() {
     <div className="flex min-h-screen items-center justify-center px-4" style={{ background: '#f7f7f5' }}>
       <form
         onSubmit={submit}
-        className="flex w-full max-w-[420px] flex-col gap-[22px]"
-        style={{ background: '#fff', borderRadius: 24, padding: '40px 36px', boxShadow: '0 20px 40px -20px rgba(0,0,0,.3)' }}
+        className="flex w-full max-w-[420px] flex-col gap-[22px] px-7 py-10 sm:px-9"
+        style={{ background: '#fff', borderRadius: 24, boxShadow: '0 20px 40px -20px rgba(0,0,0,.3)' }}
       >
         <img src="/assets/movaia-logo.png" alt="Movaia" style={{ height: 26 }} className="self-start" />
 

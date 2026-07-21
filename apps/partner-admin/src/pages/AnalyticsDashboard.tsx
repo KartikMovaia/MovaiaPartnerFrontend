@@ -252,49 +252,77 @@ function ScansTable({
           </Link>
         )}
       </div>
-      <div className="overflow-x-auto">
-        <div style={{ minWidth: showOutlet ? 640 : 460 }}>
-          {/* Column head */}
-          <div
-            className="grid px-5 py-2.5 text-[11px] font-bold uppercase tracking-[.5px]"
-            style={{ gridTemplateColumns: cols, color: '#9a9a9a', background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}
-          >
-            <span>{t('dashboard.table.date')}</span>
-            {showOutlet && <span>{t('dashboard.table.outlet')}</span>}
-            <span>{t('dashboard.table.customer')}</span>
-            <span>{t('dashboard.table.status')}</span>
-            <span>{t('dashboard.table.report')}</span>
-          </div>
-          {/* Rows */}
-          {rows.map((s, i) => (
-            <div
-              key={s.id}
-              className="grid items-center px-5 py-3.5 text-[13px]"
-              style={{ gridTemplateColumns: cols, borderBottom: i === rows.length - 1 ? 'none' : '1px solid #f5f5f5' }}
-            >
-              <span style={{ color: '#686868' }}>{fmtDateTime(s.createdAt)}</span>
-              {showOutlet && <span>{s.store?.name ?? '—'}</span>}
-              <span style={{ color: '#141414' }}>{s.customerEmail ?? '—'}</span>
-              <span>
-                <StatusPill status={s.status} />
-              </span>
-              <span>
-                <ReportFlag value={reportFlag(s)} />
-              </span>
-            </div>
-          ))}
-          {scans === null && (
-            <div className="px-5 py-6 text-[13px]" style={{ color: '#9a9a9a' }}>
-              {t('dashboard.loadingScans')}
-            </div>
-          )}
-          {scans !== null && rows.length === 0 && (
-            <div className="px-5 py-6 text-[13px]" style={{ color: '#9a9a9a' }}>
-              {t('dashboard.noScans')}
-            </div>
-          )}
+      {scans === null ? (
+        <div className="px-5 py-6 text-[13px]" style={{ color: '#9a9a9a' }}>
+          {t('dashboard.loadingScans')}
         </div>
-      </div>
+      ) : rows.length === 0 ? (
+        <div className="px-5 py-6 text-[13px]" style={{ color: '#9a9a9a' }}>
+          {t('dashboard.noScans')}
+        </div>
+      ) : (
+        <>
+          {/* Table — tablet / desktop */}
+          <div className="hidden overflow-x-auto sm:block">
+            <div style={{ minWidth: showOutlet ? 640 : 460 }}>
+              {/* Column head */}
+              <div
+                className="grid px-5 py-2.5 text-[11px] font-bold uppercase tracking-[.5px]"
+                style={{ gridTemplateColumns: cols, color: '#9a9a9a', background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}
+              >
+                <span>{t('dashboard.table.date')}</span>
+                {showOutlet && <span>{t('dashboard.table.outlet')}</span>}
+                <span>{t('dashboard.table.customer')}</span>
+                <span>{t('dashboard.table.status')}</span>
+                <span>{t('dashboard.table.report')}</span>
+              </div>
+              {/* Rows */}
+              {rows.map((s, i) => (
+                <div
+                  key={s.id}
+                  className="grid items-center px-5 py-3.5 text-[13px]"
+                  style={{ gridTemplateColumns: cols, borderBottom: i === rows.length - 1 ? 'none' : '1px solid #f5f5f5' }}
+                >
+                  <span style={{ color: '#686868' }}>{fmtDateTime(s.createdAt)}</span>
+                  {showOutlet && <span>{s.store?.name ?? '—'}</span>}
+                  <span style={{ color: '#141414' }}>{s.customerEmail ?? '—'}</span>
+                  <span>
+                    <StatusPill status={s.status} />
+                  </span>
+                  <span>
+                    <ReportFlag value={reportFlag(s)} />
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Cards — phones */}
+          <ul className="divide-y divide-[#f5f5f5] sm:hidden">
+            {rows.map((s) => (
+              <li key={s.id} className="flex flex-col gap-2 px-4 py-3.5">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 truncate text-[13px]" style={{ color: '#141414' }}>
+                    {s.customerEmail ?? '—'}
+                  </span>
+                  <span className="flex-none">
+                    <StatusPill status={s.status} />
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2 text-[12px]" style={{ color: '#686868' }}>
+                  <span className="min-w-0 truncate">
+                    {fmtDateTime(s.createdAt)}
+                    {showOutlet && s.store?.name ? ` · ${s.store.name}` : ''}
+                  </span>
+                  <span className="flex-none">
+                    <ReportFlag value={reportFlag(s)} />
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   );
 }

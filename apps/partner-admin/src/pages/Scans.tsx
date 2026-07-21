@@ -205,7 +205,7 @@ export default function Scans() {
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder={t('scans.searchPlaceholder')}
           aria-label={t('scans.searchAria')}
-          className="h-9 w-56 rounded-[9px] border px-3 text-[13px] text-[#141414] outline-none focus:border-[#ABD037]"
+          className="h-9 w-full rounded-[9px] border px-3 text-[13px] text-[#141414] outline-none focus:border-[#ABD037] sm:w-56"
           style={{ borderColor: '#e4e4e4', background: '#fff' }}
         />
         {!isOutlet && (
@@ -251,61 +251,99 @@ export default function Scans() {
               </span>
             )}
           </div>
-          <div className="overflow-x-auto">
-            <div style={{ minWidth: showOutlet ? 640 : 460 }}>
-              {/* Column head */}
-              <div
-                className="grid px-5 py-2.5 text-[11px] font-bold uppercase tracking-[.5px]"
-                style={{ gridTemplateColumns: cols, color: '#9a9a9a', background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}
-              >
-                <span>{t('scans.table.date')}</span>
-                {showOutlet && <span>{t('scans.table.outlet')}</span>}
-                <span>{t('scans.table.customer')}</span>
-                <span>{t('scans.table.status')}</span>
-                <span>{t('scans.table.report')}</span>
-              </div>
-              {/* Rows */}
-              {rows.map((s, i) => {
-                const name = [s.customerFirstName, s.customerLastName].filter(Boolean).join(' ');
-                return (
-                  <div
-                    key={s.id}
-                    className="grid items-center px-5 py-3.5 text-[13px]"
-                    style={{ gridTemplateColumns: cols, borderBottom: i === rows.length - 1 ? 'none' : '1px solid #f5f5f5' }}
-                  >
-                    <span style={{ color: '#686868' }}>{fmtDateTime(s.createdAt)}</span>
-                    {showOutlet && <span>{s.store?.name ?? '—'}</span>}
-                    <span className="min-w-0">
-                      <span className="block truncate" style={{ color: '#141414' }}>
-                        {name || s.customerEmail || '—'}
-                      </span>
-                      {name && s.customerEmail && (
-                        <span className="block truncate text-[11px]" style={{ color: '#9a9a9a' }}>
-                          {s.customerEmail}
-                        </span>
-                      )}
-                    </span>
-                    <span>
-                      <StatusPill status={s.status} />
-                    </span>
-                    <span>
-                      <ReportFlag value={reportFlag(s)} />
-                    </span>
-                  </div>
-                );
-              })}
-              {loading && rows.length === 0 && (
-                <div className="px-5 py-6 text-[13px]" style={{ color: '#9a9a9a' }}>
-                  {t('scans.loadingRows')}
-                </div>
-              )}
-              {!loading && rows.length === 0 && (
-                <div className="px-5 py-6 text-[13px]" style={{ color: '#9a9a9a' }}>
-                  {t('scans.noMatch')}
-                </div>
-              )}
+          {loading && rows.length === 0 ? (
+            <div className="px-5 py-6 text-[13px]" style={{ color: '#9a9a9a' }}>
+              {t('scans.loadingRows')}
             </div>
-          </div>
+          ) : rows.length === 0 ? (
+            <div className="px-5 py-6 text-[13px]" style={{ color: '#9a9a9a' }}>
+              {t('scans.noMatch')}
+            </div>
+          ) : (
+            <>
+              {/* Table — tablet / desktop */}
+              <div className="hidden overflow-x-auto sm:block">
+                <div style={{ minWidth: showOutlet ? 640 : 460 }}>
+                  {/* Column head */}
+                  <div
+                    className="grid px-5 py-2.5 text-[11px] font-bold uppercase tracking-[.5px]"
+                    style={{ gridTemplateColumns: cols, color: '#9a9a9a', background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}
+                  >
+                    <span>{t('scans.table.date')}</span>
+                    {showOutlet && <span>{t('scans.table.outlet')}</span>}
+                    <span>{t('scans.table.customer')}</span>
+                    <span>{t('scans.table.status')}</span>
+                    <span>{t('scans.table.report')}</span>
+                  </div>
+                  {/* Rows */}
+                  {rows.map((s, i) => {
+                    const name = [s.customerFirstName, s.customerLastName].filter(Boolean).join(' ');
+                    return (
+                      <div
+                        key={s.id}
+                        className="grid items-center px-5 py-3.5 text-[13px]"
+                        style={{ gridTemplateColumns: cols, borderBottom: i === rows.length - 1 ? 'none' : '1px solid #f5f5f5' }}
+                      >
+                        <span style={{ color: '#686868' }}>{fmtDateTime(s.createdAt)}</span>
+                        {showOutlet && <span>{s.store?.name ?? '—'}</span>}
+                        <span className="min-w-0">
+                          <span className="block truncate" style={{ color: '#141414' }}>
+                            {name || s.customerEmail || '—'}
+                          </span>
+                          {name && s.customerEmail && (
+                            <span className="block truncate text-[11px]" style={{ color: '#9a9a9a' }}>
+                              {s.customerEmail}
+                            </span>
+                          )}
+                        </span>
+                        <span>
+                          <StatusPill status={s.status} />
+                        </span>
+                        <span>
+                          <ReportFlag value={reportFlag(s)} />
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Cards — phones */}
+              <ul className="divide-y divide-[#f5f5f5] sm:hidden">
+                {rows.map((s) => {
+                  const name = [s.customerFirstName, s.customerLastName].filter(Boolean).join(' ');
+                  return (
+                    <li key={s.id} className="flex flex-col gap-2 px-4 py-3.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className="block truncate text-[13px]" style={{ color: '#141414' }}>
+                            {name || s.customerEmail || '—'}
+                          </span>
+                          {name && s.customerEmail && (
+                            <span className="block truncate text-[11px]" style={{ color: '#9a9a9a' }}>
+                              {s.customerEmail}
+                            </span>
+                          )}
+                        </div>
+                        <span className="flex-none">
+                          <StatusPill status={s.status} />
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 text-[12px]" style={{ color: '#686868' }}>
+                        <span className="min-w-0 truncate">
+                          {fmtDateTime(s.createdAt)}
+                          {showOutlet && s.store?.name ? ` · ${s.store.name}` : ''}
+                        </span>
+                        <span className="flex-none">
+                          <ReportFlag value={reportFlag(s)} />
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
 
           {/* Pagination */}
           {total > 0 && (

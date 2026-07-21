@@ -8,7 +8,9 @@
     "tryAgain": "Subukan muli",
     "cancel": "Kanselahin",
     "confirm": "Kumpirmahin",
-    "signOut": "Mag-sign out"
+    "signOut": "Mag-sign out",
+    "openMenu": "Buksan ang menu",
+    "closeMenu": "Isara ang menu"
   },
   "errorState": {
     "generic": "May nangyaring mali sa pag-load ng data na ito."

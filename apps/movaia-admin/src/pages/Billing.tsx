@@ -123,8 +123,8 @@ export default function Billing() {
               <StatCard label="Estimated total" value={totalAmount === null ? '—' : money(totalAmount)} sub={priced ? `@ ${money(unit as number)} / analysis` : 'set a price to estimate'} />
             </div>
 
-            {/* Per-partner usage */}
-            <div className="overflow-hidden rounded-[14px] border border-[#ececec] bg-white">
+            {/* Per-partner usage — table on tablet/desktop */}
+            <div className="hidden overflow-hidden rounded-[14px] border border-[#ececec] bg-white sm:block">
               <div className="grid grid-cols-[1.8fr_1fr_1fr_1fr] border-b border-[#f0f0f0] bg-[#fafafa] px-5 py-[11px] text-[11px] font-bold uppercase tracking-[.5px] text-[#9a9a9a]">
                 <span>Partner</span>
                 <span>Outlets</span>
@@ -160,6 +160,44 @@ export default function Billing() {
                   <span>{fmtNum(totalAnalyses)}</span>
                   <span className="text-right">{totalAmount === null ? '—' : money(totalAmount)}</span>
                 </div>
+              )}
+            </div>
+
+            {/* Per-partner usage — cards on phones */}
+            <div className="flex flex-col gap-3 sm:hidden">
+              {rows.length === 0 ? (
+                <div className="rounded-[14px] border border-[#ececec] bg-white px-5 py-8 text-center text-sm text-[#9a9a9a]">
+                  No partners yet.
+                </div>
+              ) : (
+                <>
+                  {rows.map((p) => (
+                    <div key={p.id} className="flex flex-col gap-2.5 rounded-[14px] border border-[#ececec] bg-white p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <b className="block truncate text-sm">{p.name}</b>
+                          <span className="block truncate font-mono text-[11px] text-[#9a9a9a]">{p.slug}</span>
+                        </div>
+                        <span className="flex-none text-sm font-bold">
+                          {priced ? money(p.scanCount * (unit as number)) : '—'}
+                        </span>
+                      </div>
+                      <div className="flex gap-4 text-[13px] text-[#686868]">
+                        <span>
+                          <b className="text-[#141414]">{fmtNum(p.storeCount)}</b> outlets
+                        </span>
+                        <span>
+                          <b className="text-[#141414]">{fmtNum(p.scanCount)}</b> analyses
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {/* Totals card */}
+                  <div className="flex items-center justify-between gap-3 rounded-[14px] border border-[#ececec] bg-[#fafafa] p-4 text-[13px] font-bold">
+                    <span>Total · {fmtNum(totalAnalyses)} analyses</span>
+                    <span>{totalAmount === null ? '—' : money(totalAmount)}</span>
+                  </div>
+                </>
               )}
             </div>
           </>

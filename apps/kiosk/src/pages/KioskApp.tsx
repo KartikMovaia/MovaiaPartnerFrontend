@@ -198,13 +198,13 @@ function DeviceSetup({
   return (
     <Screen>
       <KioskHeader theme={theme} />
-      <div className="flex flex-1 flex-col justify-center px-[90px]">
+      <div className="flex flex-1 flex-col justify-center px-6 sm:px-10 lg:px-[90px]">
         <form onSubmit={submit} className="flex w-full max-w-[520px] flex-col gap-4">
           <span className="text-[13px]" style={eyebrow}>{t('deviceSetup.eyebrow')}</span>
-          <h1 className="m-0 text-[40px] font-extrabold leading-[1.05]" style={{ letterSpacing: '-.8px' }}>
+          <h1 className="m-0 text-[30px] font-extrabold leading-[1.05] sm:text-[40px]" style={{ letterSpacing: '-.8px' }}>
             {t('deviceSetup.title')}
           </h1>
-          <p className="m-0 text-[17px] leading-[1.5]" style={{ color: '#686868' }}>
+          <p className="m-0 text-[16px] leading-[1.5] sm:text-[17px]" style={{ color: '#686868' }}>
             {t('deviceSetup.desc')}
           </p>
           {notice && (
@@ -397,7 +397,7 @@ function KioskFlow() {
 // fallback covers a broken upload — if the image 404s (e.g. a deleted/expired S3
 // object) we remember the bad URL and drop through to the wordmark instead of
 // showing a broken-image icon.
-function Wordmark({ theme, size = 26, logoHeight = 46 }: { theme: PartnerTheme; size?: number; logoHeight?: number }) {
+function Wordmark({ theme, size = 26 }: { theme: PartnerTheme; size?: number }) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const { logoUrl } = theme;
   if (logoUrl && logoUrl !== failedUrl) {
@@ -406,8 +406,9 @@ function Wordmark({ theme, size = 26, logoHeight = 46 }: { theme: PartnerTheme; 
         src={logoUrl}
         alt={theme.displayName}
         // An uploaded logo gets more room than the generated wordmark, but is
-        // bounded so a very wide mark can't crowd the "Powered by" logo.
-        style={{ height: logoHeight, maxWidth: 280, objectFit: 'contain' }}
+        // bounded so a very wide mark can't crowd the "Powered by" logo. Smaller
+        // and tighter on phones so it never pushes the language pill off-screen.
+        className="h-9 max-w-[150px] object-contain sm:h-[46px] sm:max-w-[280px]"
         onError={() => setFailedUrl(logoUrl)}
       />
     );
@@ -426,12 +427,13 @@ function Wordmark({ theme, size = 26, logoHeight = 46 }: { theme: PartnerTheme; 
 function KioskHeader({ theme }: { theme: PartnerTheme }) {
   const { t } = useTranslation('kiosk');
   return (
-    <div className="flex items-center justify-between px-10 py-6">
+    <div className="flex items-center justify-between gap-3 px-5 py-4 sm:px-10 sm:py-6">
       <Wordmark theme={theme} />
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         {/* Customer language picker — the choice lasts this session and resets on reset. */}
         <LanguageSwitcher variant="kiosk" />
-        <div className="flex items-center gap-2" style={{ opacity: 0.65 }}>
+        {/* "Powered by Movaia" — hidden on phones to keep the header on one row. */}
+        <div className="hidden items-center gap-2 sm:flex" style={{ opacity: 0.65 }}>
           <span className="text-xs" style={{ color: '#686868' }}>{t('poweredBy')}</span>
           <img src={MOVAIA_LOGO} alt="Movaia" style={{ height: 16 }} />
         </div>
@@ -666,7 +668,12 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
         <div className="flex flex-1 flex-col justify-center gap-7 px-6 sm:px-10 lg:px-12 xl:px-16 2xl:px-[90px]">
         <div className="flex flex-col gap-2.5">
           <span className="text-[14px]" style={eyebrow}>{t('welcome.eyebrow')}</span>
-          <p className="m-0 max-w-[560px] text-[19px] leading-[1.5]" style={{ color: '#686868' }}>
+          {/* Headline — the brand hero carries it on lg+, so surface it here on
+              phones/tablets where the hero panel is hidden (no headless screen). */}
+          <h1 className="m-0 text-[30px] font-extrabold leading-[1.05] sm:text-[38px] lg:hidden" style={{ letterSpacing: '-1px' }}>
+            {t('welcome.hero.titleAccent')}
+          </h1>
+          <p className="m-0 max-w-[560px] text-[17px] leading-[1.5] sm:text-[19px]" style={{ color: '#686868' }}>
             {t('welcome.desc')}
           </p>
         </div>
@@ -683,8 +690,9 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
             </>
           ) : (
             <>
-              {/* Height + weight — value(s) with a unit toggle each */}
-              <div className="flex gap-3.5">
+              {/* Height + weight — value(s) with a unit toggle each. Stacked on
+                  phones so each value + its toggle has room; side by side from sm up. */}
+              <div className="flex flex-col gap-3.5 sm:flex-row">
                 <div className="flex min-w-0 flex-1 gap-2">
                   {heightUnit === 'cm' ? (
                     <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="decimal" aria-label={t('welcome.heightCmAria')} placeholder={t('welcome.height')} value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
@@ -756,19 +764,19 @@ function Returning({
   return (
     <Screen>
       <KioskHeader theme={theme} />
-      <div className="flex flex-1 flex-col items-center justify-center gap-[30px] px-[90px] text-center">
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6 text-center sm:gap-[30px] sm:px-10 lg:px-[90px]">
         <div
-          className="flex h-[120px] w-[120px] items-center justify-center rounded-full text-[46px] font-extrabold"
+          className="flex h-[92px] w-[92px] items-center justify-center rounded-full text-[36px] font-extrabold sm:h-[120px] sm:w-[120px] sm:text-[46px]"
           style={{ background: 'color-mix(in srgb, var(--brand-primary) 16%, #fff)', color: 'var(--brand-primary)' }}
         >
           {customer.initials ?? customer.firstName.slice(0, 2).toUpperCase()}
         </div>
         <div className="flex flex-col gap-3">
           <span className="text-[14px]" style={eyebrow}>{t('returning.eyebrow')}</span>
-          <h1 className="m-0 text-[48px] font-extrabold leading-[1.05]" style={{ letterSpacing: '-1px' }}>
+          <h1 className="m-0 text-[32px] font-extrabold leading-[1.05] sm:text-[44px] lg:text-[48px]" style={{ letterSpacing: '-1px' }}>
             {t('returning.title', { name: customer.firstName })}
           </h1>
-          <p className="m-0 max-w-[560px] text-[19px] leading-[1.5]" style={{ color: '#686868' }}>
+          <p className="m-0 max-w-[560px] text-[17px] leading-[1.5] sm:text-[19px]" style={{ color: '#686868' }}>
             <Trans t={t} i18nKey="returning.desc" values={{ email: customer.email }} components={{ bold: <b style={{ color: '#141414' }} /> }} />
           </p>
         </div>
@@ -795,7 +803,7 @@ function GetReady({ onReady }: { onReady: () => void }) {
 
   return (
     <Screen>
-      <div className="flex min-h-screen flex-col px-[60px] py-10">
+      <div className="flex min-h-screen flex-col px-5 py-8 sm:px-10 sm:py-10 lg:px-[60px]">
         <div className="mb-1.5 flex items-center justify-between">
           <span className="text-[15px] font-semibold" style={{ color: '#686868' }}>{t('getReady.step')}</span>
           <div className="flex gap-1.5">
@@ -804,8 +812,8 @@ function GetReady({ onReady }: { onReady: () => void }) {
             <span className="h-1.5 w-[34px] rounded-sm" style={{ background: '#e4e4e4' }} />
           </div>
         </div>
-        <h1 className="mb-1 mt-3.5 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>{t('getReady.title')}</h1>
-        <p className="mb-[26px] text-[19px]" style={{ color: '#686868' }}>
+        <h1 className="mb-1 mt-3.5 text-[30px] font-extrabold sm:text-[40px]" style={{ letterSpacing: '-.8px' }}>{t('getReady.title')}</h1>
+        <p className="mb-[26px] text-[17px] sm:text-[19px]" style={{ color: '#686868' }}>
           <Trans t={t} i18nKey="getReady.subtitle" components={{ bold: <b style={{ color: '#141414' }} /> }} />
         </p>
         {/* Illustration and recording steps share a row: the landscape iPad has
@@ -825,7 +833,7 @@ function GetReady({ onReady }: { onReady: () => void }) {
               Centred vertically: the panel stretches to the illustration's
               height, so short step lists would otherwise sit in dead space. */}
           <div
-            className="flex flex-col justify-center rounded-[16px] px-7 py-[22px]"
+            className="flex flex-col justify-center rounded-[16px] px-5 py-5 sm:px-7 sm:py-[22px]"
             style={{ background: 'color-mix(in srgb, var(--brand-primary) 7%, #fff)' }}
           >
             <b className="text-[13px] font-bold uppercase tracking-[1.5px]" style={{ color: '#141414' }}>
@@ -1059,9 +1067,9 @@ function Review({ blob, onRecordAgain, onSubmit }: { blob: Blob | null; onRecord
 
   return (
     <Screen>
-      <div className="flex min-h-screen flex-col px-[60px] py-10">
-        <h1 className="mb-1 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>{t('review.title')}</h1>
-        <p className="mb-[22px] text-[19px]" style={{ color: '#686868' }}>{t('review.subtitle')}</p>
+      <div className="flex min-h-screen flex-col px-5 py-8 sm:px-10 sm:py-10 lg:px-[60px]">
+        <h1 className="mb-1 text-[30px] font-extrabold sm:text-[40px]" style={{ letterSpacing: '-.8px' }}>{t('review.title')}</h1>
+        <p className="mb-[22px] text-[17px] sm:text-[19px]" style={{ color: '#686868' }}>{t('review.subtitle')}</p>
         <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-[18px]" style={{ background: 'linear-gradient(135deg,#1b2430,#0e141c)' }}>
           {url ? (
             <video src={url} controls autoPlay muted playsInline className="h-full w-full object-contain" />
@@ -1134,17 +1142,17 @@ function Uploading({
 
   return (
     <Screen>
-      <div className="flex min-h-screen flex-col items-center justify-center gap-[34px] px-[90px] text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-8 px-6 text-center sm:gap-[34px] sm:px-10">
         <div className="relative flex h-[150px] w-[150px] items-center justify-center">
           <span className="absolute inset-0 rounded-full" style={{ border: '8px solid #eef2f2' }} />
           <span className="absolute inset-0 animate-mv-spin rounded-full" style={{ border: '8px solid var(--brand-primary)', borderRightColor: 'transparent', borderTopColor: 'transparent' }} />
           <span className="tnum text-[34px] font-extrabold" style={{ color: '#141414' }}>{pct}%</span>
         </div>
         <div className="flex flex-col gap-2.5">
-          <h1 className="m-0 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>{t('uploading.title')}</h1>
-          <p className="m-0 text-[19px]" style={{ color: '#686868' }}>{t('uploading.subtitle')}</p>
+          <h1 className="m-0 text-[30px] font-extrabold sm:text-[40px]" style={{ letterSpacing: '-.8px' }}>{t('uploading.title')}</h1>
+          <p className="m-0 text-[17px] sm:text-[19px]" style={{ color: '#686868' }}>{t('uploading.subtitle')}</p>
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center justify-center gap-2.5">
           <span className={chip} style={{ background: '#eef6dd', color: '#5a7d16' }}>✓ {t('uploading.clipCaptured')}</span>
           <span className={chip} style={{ background: '#fdf0d9', color: '#a9720d' }}>
             <span className="h-[7px] w-[7px] animate-mv-pulse rounded-full" style={{ background: '#e0930f' }} />{t('uploading.uploading')}
@@ -1171,11 +1179,11 @@ function Confirmation({ email, onDone }: { email: string; onDone: () => void }) 
   }, [secs, onDone]);
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center gap-[30px] px-[90px] text-center" style={{ background: 'var(--brand-primary)' }}>
-      <div className="flex h-[130px] w-[130px] items-center justify-center rounded-full bg-white text-[60px]" style={{ color: 'var(--brand-primary)' }}>✓</div>
+    <div className="flex min-h-screen w-full flex-col items-center justify-center gap-7 px-6 text-center sm:gap-[30px] sm:px-10" style={{ background: 'var(--brand-primary)' }}>
+      <div className="flex h-[100px] w-[100px] items-center justify-center rounded-full bg-white text-[46px] sm:h-[130px] sm:w-[130px] sm:text-[60px]" style={{ color: 'var(--brand-primary)' }}>✓</div>
       <div className="flex flex-col gap-3.5">
-        <h1 className="m-0 text-[52px] font-extrabold text-white" style={{ letterSpacing: '-1px' }}>{t('confirmation.title')}</h1>
-        <p className="m-0 max-w-[600px] text-[21px] leading-[1.5]" style={{ color: 'rgba(255,255,255,.9)' }}>
+        <h1 className="m-0 text-[34px] font-extrabold text-white sm:text-[46px] lg:text-[52px]" style={{ letterSpacing: '-1px' }}>{t('confirmation.title')}</h1>
+        <p className="m-0 max-w-[600px] text-[17px] leading-[1.5] sm:text-[21px]" style={{ color: 'rgba(255,255,255,.9)' }}>
           <Trans t={t} i18nKey="confirmation.desc" values={{ email: email || t('confirmation.inbox') }} components={{ bold: <b className="text-white" /> }} />
         </p>
       </div>
@@ -1195,19 +1203,19 @@ function CameraDenied({ theme, onRetry, onHome }: { theme: PartnerTheme; onRetry
   const { t } = useTranslation('kiosk');
   return (
     <Screen>
-      <div className="flex min-h-screen flex-col items-center justify-center gap-7 px-[100px] text-center">
-        <div className="flex h-[120px] w-[120px] items-center justify-center rounded-[28px] text-[56px]" style={{ background: '#fce7e6', color: '#d64a43' }}>⚠</div>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center sm:gap-7 sm:px-10">
+        <div className="flex h-[96px] w-[96px] items-center justify-center rounded-[28px] text-[44px] sm:h-[120px] sm:w-[120px] sm:text-[56px]" style={{ background: '#fce7e6', color: '#d64a43' }}>⚠</div>
         <div className="flex flex-col gap-3">
-          <h1 className="m-0 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>{t('cameraDenied.title')}</h1>
-          <p className="m-0 max-w-[600px] text-[19px] leading-[1.55]" style={{ color: '#686868' }}>
+          <h1 className="m-0 text-[30px] font-extrabold sm:text-[40px]" style={{ letterSpacing: '-.8px' }}>{t('cameraDenied.title')}</h1>
+          <p className="m-0 max-w-[600px] text-[17px] leading-[1.55] sm:text-[19px]" style={{ color: '#686868' }}>
             <Trans t={t} i18nKey="cameraDenied.desc" values={{ partner: theme.displayName }} components={{ bold: <b style={{ color: '#141414' }} /> }} />
           </p>
         </div>
-        <div className="flex gap-3.5">
-          <button onClick={onHome} className="h-[66px] rounded-[14px] border-2 px-[34px] text-[18px] font-semibold" style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}>
+        <div className="flex w-full max-w-[420px] flex-col gap-3.5 sm:w-auto sm:max-w-none sm:flex-row">
+          <button onClick={onHome} className="h-[66px] w-full rounded-[14px] border-2 px-[34px] text-[18px] font-semibold sm:w-auto" style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}>
             {t('cameraDenied.getHelp')}
           </button>
-          <button onClick={onRetry} className="h-[66px] rounded-[14px] px-10 text-[19px] font-bold" style={brandBtn}>
+          <button onClick={onRetry} className="h-[66px] w-full rounded-[14px] px-10 text-[19px] font-bold sm:w-auto" style={brandBtn}>
             {t('cameraDenied.tryAgain')}
           </button>
         </div>
@@ -1222,19 +1230,19 @@ function UploadFailed({ theme, onRetry, onHome }: { theme: PartnerTheme; onRetry
   const { t } = useTranslation('kiosk');
   return (
     <Screen>
-      <div className="flex min-h-screen flex-col items-center justify-center gap-7 px-[100px] text-center">
-        <div className="flex h-[120px] w-[120px] items-center justify-center rounded-[28px] text-[56px]" style={{ background: '#fce7e6', color: '#d64a43' }}>⟳</div>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center sm:gap-7 sm:px-10">
+        <div className="flex h-[96px] w-[96px] items-center justify-center rounded-[28px] text-[44px] sm:h-[120px] sm:w-[120px] sm:text-[56px]" style={{ background: '#fce7e6', color: '#d64a43' }}>⟳</div>
         <div className="flex flex-col gap-3">
-          <h1 className="m-0 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>{t('uploadFailed.title')}</h1>
-          <p className="m-0 max-w-[600px] text-[19px] leading-[1.55]" style={{ color: '#686868' }}>
+          <h1 className="m-0 text-[30px] font-extrabold sm:text-[40px]" style={{ letterSpacing: '-.8px' }}>{t('uploadFailed.title')}</h1>
+          <p className="m-0 max-w-[600px] text-[17px] leading-[1.55] sm:text-[19px]" style={{ color: '#686868' }}>
             {t('uploadFailed.desc')}
           </p>
         </div>
-        <div className="flex gap-3.5">
-          <button onClick={onHome} className="h-[66px] rounded-[14px] border-2 px-[34px] text-[18px] font-semibold" style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}>
+        <div className="flex w-full max-w-[420px] flex-col gap-3.5 sm:w-auto sm:max-w-none sm:flex-row">
+          <button onClick={onHome} className="h-[66px] w-full rounded-[14px] border-2 px-[34px] text-[18px] font-semibold sm:w-auto" style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}>
             {t('uploadFailed.startOver')}
           </button>
-          <button onClick={onRetry} className="h-[66px] rounded-[14px] px-10 text-[19px] font-bold" style={brandBtn}>
+          <button onClick={onRetry} className="h-[66px] w-full rounded-[14px] px-10 text-[19px] font-bold sm:w-auto" style={brandBtn}>
             ↻ {t('uploadFailed.retry')}
           </button>
         </div>
