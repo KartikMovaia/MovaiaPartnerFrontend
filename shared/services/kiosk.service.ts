@@ -77,7 +77,9 @@ export const kioskService = {
       return;
     }
     await axios.put(uploadUrl, blob, {
-      headers: { 'Content-Type': blob.type || 'video/webm' },
+      // Kiosk clips are always MP4 (pickMime records MP4-only; the presigned
+      // URL is minted for scan.mp4) — the fallback matches that contract.
+      headers: { 'Content-Type': blob.type || 'video/mp4' },
       onUploadProgress: (e) => {
         if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100));
       },

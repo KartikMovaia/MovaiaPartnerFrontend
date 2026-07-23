@@ -136,6 +136,11 @@
     "getHelp": "Get staff help",
     "tryAgain": "Try again"
   },
+  "unsupported": {
+    "title": "This device can't record scans",
+    "desc": "This browser can't record video in the MP4 format Movaia analyzes. Please use the kiosk iPad provided by <bold>{{partner}}</bold>, or update this browser and try again.",
+    "home": "Back to start"
+  },
   "uploadFailed": {
     "title": "Upload didn't go through",
     "desc": "We couldn't reach the network — check the connection and tap retry. You won't need to record again.",

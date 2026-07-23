@@ -136,6 +136,11 @@
     "getHelp": "尋求工作人員協助",
     "tryAgain": "再試一次"
   },
+  "unsupported": {
+    "title": "此裝置無法錄製掃描",
+    "desc": "此瀏覽器無法以 Movaia 分析所需的 MP4 格式錄影。請使用 <bold>{{partner}}</bold> 提供的機台 iPad，或更新此瀏覽器後再試一次。",
+    "home": "返回開始畫面"
+  },
   "uploadFailed": {
     "title": "上傳未成功",
     "desc": "我們無法連上網路 — 請檢查網路連線後點選重試。您不需要重新錄製。",

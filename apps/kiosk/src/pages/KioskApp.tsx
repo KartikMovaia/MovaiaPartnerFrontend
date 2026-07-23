@@ -36,7 +36,8 @@ type Step =
   | 'uploading'
   | 'done'
   | 'error-camera'
-  | 'error-upload';
+  | 'error-upload'
+  | 'error-unsupported';
 
 interface Recognized {
   firstName: string;
@@ -309,6 +310,13 @@ function KioskFlow() {
   }
 
   const identify = async (d: IdentifyDetails) => {
+    // MP4-capable recorder required (see pickMime). Checked BEFORE the identify
+    // call so an unsupported browser never creates a Movaia athlete/analysis/
+    // presigned URL for a session that can't produce an analyzable clip.
+    if (!pickMime()) {
+      setStep('error-unsupported');
+      return;
+    }
     const res = await kioskService.identify({
       kioskSessionId: sessionRef.current,
       firstName: d.firstName,
@@ -364,6 +372,8 @@ function KioskFlow() {
         return <CameraDenied theme={theme} onRetry={() => setStep('preroll')} onHome={goHome} />;
       case 'error-upload':
         return <UploadFailed theme={theme} onRetry={() => setStep('uploading')} onHome={goHome} />;
+      case 'error-unsupported':
+        return <UnsupportedDevice theme={theme} onHome={goHome} />;
       default:
         return <Welcome key={resetNonce} theme={theme} onStart={identify} />;
     }
@@ -918,11 +928,20 @@ function GetReady({ onReady }: { onReady: () => void }) {
 
 /* ────────────────────── 04/05 · Pre-roll + Recording ────────────────────── */
 
-// Pick a MediaRecorder mime the browser actually supports (iPad Safari doesn't
-// do webm; falls back to mp4/H.264). Empty string = let the browser choose.
+// Pick an MP4 MediaRecorder mime — MP4/H.264 ONLY, no WebM fallback. The Movaia
+// analysis engine can't process WebM (run.movaia.com's own upload flow rejects
+// it), and the backend contract presigns the clip as scan.mp4 (lib/movaia.ts),
+// so a WebM recording would be uploaded mislabeled and produce a guaranteed
+// FAILED analysis. iPad Safari (the real kiosk device) and Chrome 126+ both
+// record MP4; browsers that can't (e.g. Firefox) are blocked at identify with
+// the unsupported-device screen instead of being allowed to record a dud.
 function pickMime(): string {
   if (typeof MediaRecorder === 'undefined') return '';
-  const candidates = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'];
+  const candidates = [
+    'video/mp4;codecs=avc1.42E01E', // H.264 baseline — safest for the analyzer
+    'video/mp4;codecs=avc1',
+    'video/mp4',
+  ];
   for (const t of candidates) if (MediaRecorder.isTypeSupported(t)) return t;
   return '';
 }
@@ -982,14 +1001,19 @@ function CameraStage({
     if (!stream) return; // still advances the UI even without a real camera
     chunksRef.current = [];
     try {
+      // MP4 only — never fall back to letting the browser choose (it would pick
+      // WebM, which the engine can't analyze). The normal flow is gated at
+      // identify; this also covers QA deep links (?screen=preroll), which just
+      // advance clipless like the simulated-camera path.
       const mime = pickMime();
-      const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      if (!mime) return;
+      const rec = new MediaRecorder(stream, { mimeType: mime });
       rec.ondataavailable = (e) => e.data.size && chunksRef.current.push(e.data);
       // Build the Blob when recording stops and hand it to the flow so it can be
       // played back in Review and uploaded for real.
       rec.onstop = () => {
         const blob = chunksRef.current.length
-          ? new Blob(chunksRef.current, { type: rec.mimeType || 'video/webm' })
+          ? new Blob(chunksRef.current, { type: rec.mimeType || 'video/mp4' })
           : null;
         onRecorded(blob);
       };
@@ -1264,6 +1288,31 @@ function CameraDenied({ theme, onRetry, onHome }: { theme: PartnerTheme; onRetry
             {t('cameraDenied.tryAgain')}
           </button>
         </div>
+      </div>
+    </Screen>
+  );
+}
+
+/* ──────────────────── 09b · Recording format unsupported ──────────────────── */
+
+// Shown when the browser can't record MP4 (see pickMime) — e.g. Firefox, or an
+// outdated Chrome. Terminal for this device: there's no retry that could help,
+// so the only action is back to start.
+function UnsupportedDevice({ theme, onHome }: { theme: PartnerTheme; onHome: () => void }) {
+  const { t } = useTranslation('kiosk');
+  return (
+    <Screen>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center sm:gap-7 sm:px-10">
+        <div className="flex h-[96px] w-[96px] items-center justify-center rounded-[28px] text-[44px] sm:h-[120px] sm:w-[120px] sm:text-[56px]" style={{ background: '#fce7e6', color: '#d64a43' }}>⚠</div>
+        <div className="flex flex-col gap-3">
+          <h1 className="m-0 text-[30px] font-extrabold sm:text-[40px]" style={{ letterSpacing: '-.8px' }}>{t('unsupported.title')}</h1>
+          <p className="m-0 max-w-[600px] text-[17px] leading-[1.55] sm:text-[19px]" style={{ color: '#686868' }}>
+            <Trans t={t} i18nKey="unsupported.desc" values={{ partner: theme.displayName }} components={{ bold: <b style={{ color: '#141414' }} /> }} />
+          </p>
+        </div>
+        <button onClick={onHome} className="h-[66px] rounded-[14px] px-10 text-[19px] font-bold" style={brandBtn}>
+          {t('unsupported.home')}
+        </button>
       </div>
     </Screen>
   );

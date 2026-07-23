@@ -136,6 +136,11 @@
     "getHelp": "Mitarbeitende um Hilfe bitten",
     "tryAgain": "Erneut versuchen"
   },
+  "unsupported": {
+    "title": "Dieses Gerät kann keine Scans aufnehmen",
+    "desc": "Dieser Browser kann Videos nicht im MP4-Format aufnehmen, das Movaia analysiert. Bitte verwenden Sie das von <bold>{{partner}}</bold> bereitgestellte Kiosk-iPad oder aktualisieren Sie diesen Browser und versuchen Sie es erneut.",
+    "home": "Zurück zum Start"
+  },
   "uploadFailed": {
     "title": "Upload nicht erfolgreich",
     "desc": "Wir konnten das Netzwerk nicht erreichen — prüfen Sie die Verbindung und tippen Sie auf Wiederholen. Sie müssen nicht erneut aufnehmen.",

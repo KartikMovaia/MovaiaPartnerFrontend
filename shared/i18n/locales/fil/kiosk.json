@@ -136,6 +136,11 @@
     "getHelp": "Humingi ng tulong sa staff",
     "tryAgain": "Subukan muli"
   },
+  "unsupported": {
+    "title": "Hindi makapag-record ng scan ang device na ito",
+    "desc": "Hindi makapag-record ng video ang browser na ito sa MP4 format na sinusuri ng Movaia. Gamitin ang kiosk iPad na bigay ng <bold>{{partner}}</bold>, o i-update ang browser na ito at subukan muli.",
+    "home": "Bumalik sa simula"
+  },
   "uploadFailed": {
     "title": "Hindi natuloy ang upload",
     "desc": "Hindi namin naabot ang network — suriin ang koneksyon at i-tap ang retry. Hindi mo na kailangang mag-record ulit.",
