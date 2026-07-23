@@ -110,8 +110,8 @@
   "review": {
     "title": "Zufrieden mit Ihrem Clip?",
     "subtitle": "Schauen Sie ihn sich kurz an. Sie können bei Bedarf neu aufnehmen.",
-    "noPreview": "Auf diesem Gerät ist keine Vorschau verfügbar",
-    "noPreviewSub": "Ihr Clip wird trotzdem zur Analyse übermittelt.",
+    "noClip": "Wir konnten Ihren Clip nicht aufnehmen",
+    "noClipSub": "Das kann passieren, wenn die Kamera unterbrochen wird. Bitte nehmen Sie erneut auf.",
     "recordAgain": "Neu aufnehmen",
     "submit": "Zur Analyse senden"
   },

@@ -1119,13 +1119,20 @@ function CameraStage({
 
 function Review({ blob, onRecordAgain, onSubmit }: { blob: Blob | null; onRecordAgain: () => void; onSubmit: () => void }) {
   const { t } = useTranslation('kiosk');
+  // A scan may only be submitted with a real clip. A null/empty blob means
+  // recording produced no data (interrupted camera, killed recorder) — the old
+  // "will still be submitted" path confirmed an upload that never happened and
+  // guaranteed a FAILED analysis, so here it becomes a re-record instead.
+  const hasClip = blob !== null && blob.size > 0;
   // Create the playback URL in an effect (NOT useMemo) and revoke it in the SAME
   // effect's cleanup. The useMemo + separate-revoke pattern gets the URL revoked
   // out from under the <video> under React StrictMode's double-invoke, so the
   // clip never renders.
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
-    if (!blob) {
+    // Same predicate as hasClip, so an empty blob never renders a preview
+    // while the buttons are already in the no-clip state.
+    if (!blob || blob.size === 0) {
       setUrl(null);
       return;
     }
@@ -1145,20 +1152,32 @@ function Review({ blob, onRecordAgain, onSubmit }: { blob: Blob | null; onRecord
           ) : (
             <>
               <div className="absolute inset-0" style={{ background: 'repeating-linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,.02) 14px,transparent 14px,transparent 28px)' }} />
-              <span className="flex flex-col items-center gap-1.5 text-center">
-                <span className="text-[16px]" style={{ color: 'rgba(255,255,255,.7)' }}>{t('review.noPreview')}</span>
-                <span className="text-[13px]" style={{ color: 'rgba(255,255,255,.45)' }}>{t('review.noPreviewSub')}</span>
-              </span>
+              {/* url lags a real clip by one effect tick — only a missing clip gets the message */}
+              {!hasClip && (
+                <span className="flex flex-col items-center gap-1.5 text-center">
+                  <span className="text-[16px]" style={{ color: 'rgba(255,255,255,.7)' }}>{t('review.noClip')}</span>
+                  <span className="text-[13px]" style={{ color: 'rgba(255,255,255,.45)' }}>{t('review.noClipSub')}</span>
+                </span>
+              )}
             </>
           )}
         </div>
         <div className="mt-6 flex gap-3.5">
-          <button onClick={onRecordAgain} className="h-[72px] flex-1 rounded-[14px] border-2 text-[19px] font-semibold" style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}>
-            ↻ {t('review.recordAgain')}
-          </button>
-          <button onClick={onSubmit} className="h-[72px] flex-[2] rounded-[14px] text-[22px] font-bold" style={brandBtn}>
-            {t('review.submit')}  →
-          </button>
+          {hasClip ? (
+            <>
+              <button onClick={onRecordAgain} className="h-[72px] flex-1 rounded-[14px] border-2 text-[19px] font-semibold" style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}>
+                ↻ {t('review.recordAgain')}
+              </button>
+              <button onClick={onSubmit} className="h-[72px] flex-[2] rounded-[14px] text-[22px] font-bold" style={brandBtn}>
+                {t('review.submit')}  →
+              </button>
+            </>
+          ) : (
+            // No clip → no Submit. Re-record is the only way forward.
+            <button onClick={onRecordAgain} className="h-[72px] flex-1 rounded-[14px] text-[22px] font-bold" style={brandBtn}>
+              ↻ {t('review.recordAgain')}
+            </button>
+          )}
         </div>
       </div>
     </Screen>
@@ -1184,14 +1203,21 @@ function Uploading({
   const [pct, setPct] = useState(0);
 
   useEffect(() => {
+    // Backstop to Review's no-clip guard: submitting without an uploaded clip
+    // confirms a key with no S3 object behind it → guaranteed FAILED analysis.
+    // Only reachable via QA deep links (?screen=uploading) — never a real flow.
+    if (!blob || blob.size === 0) {
+      onError();
+      return;
+    }
     let mounted = true;
     (async () => {
       try {
-        if (blob && uploadUrl) {
+        if (uploadUrl) {
           // Real presigned PUT straight to Movaia's S3, with genuine progress.
           await kioskService.uploadVideo(uploadUrl, blob, (p) => mounted && setPct(p));
         } else if (mounted) {
-          setPct(100); // no real clip captured (simulated) — skip the PUT
+          setPct(100); // stubbed local run without a presigned URL — skip the PUT
         }
         await kioskService.submit(scanId);
         if (mounted) {

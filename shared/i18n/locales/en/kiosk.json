@@ -110,8 +110,8 @@
   "review": {
     "title": "Happy with your clip?",
     "subtitle": "Give it a quick watch. You can re-record if you'd like.",
-    "noPreview": "No preview available on this device",
-    "noPreviewSub": "Your clip will still be submitted for analysis.",
+    "noClip": "We couldn't capture your clip",
+    "noClipSub": "This can happen if the camera gets interrupted. Please record again.",
     "recordAgain": "Record again",
     "submit": "Submit for analysis"
   },

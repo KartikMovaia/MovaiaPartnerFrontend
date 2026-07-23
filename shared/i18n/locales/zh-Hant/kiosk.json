@@ -110,8 +110,8 @@
   "review": {
     "title": "對這段影片滿意嗎？",
     "subtitle": "快速看一下。若需要，您也可以重新錄製。",
-    "noPreview": "此裝置無法預覽",
-    "noPreviewSub": "您的影片仍會提交進行分析。",
+    "noClip": "未能擷取您的影片",
+    "noClipSub": "相機中斷時可能會發生這種情況。請重新錄製。",
     "recordAgain": "重新錄製",
     "submit": "提交分析"
   },

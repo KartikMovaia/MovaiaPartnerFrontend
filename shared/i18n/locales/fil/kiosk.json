@@ -110,8 +110,8 @@
   "review": {
     "title": "Nasisiyahan ka ba sa iyong clip?",
     "subtitle": "Panoorin mo muna. Pwede kang mag-record ulit kung gusto mo.",
-    "noPreview": "Walang available na preview sa device na ito",
-    "noPreviewSub": "Ipapasa pa rin ang iyong clip para sa analysis.",
+    "noClip": "Hindi na-capture ang iyong clip",
+    "noClipSub": "Maaari itong mangyari kapag naantala ang camera. Mag-record ulit.",
     "recordAgain": "Mag-record ulit",
     "submit": "Ipasa para sa analysis"
   },
