@@ -15,12 +15,10 @@
   },
   "welcome": {
     "eyebrow": "Pagsusuri ng running gait",
-    "title": "Suriin natin ang iyong pagtakbo.",
-    "desc": "Ilagay ang iyong mga detalye at ie-email namin ang iyong personal na analysis report — kadalasan sa loob ng ilang minuto.",
+    "desc": "Ilagay ang iyong mga detalye",
     "firstName": "Pangalan",
     "lastName": "Apelyido",
     "email": "Email address",
-    "phone": "Numero ng telepono (opsyonal)",
     "height": "Taas",
     "weight": "Timbang",
     "heightCmAria": "Taas sa sentimetro",
@@ -31,8 +29,10 @@
     "weightUnitAria": "Yunit ng timbang",
     "ft": "ft",
     "in": "in",
-    "helper": "Dito namin ie-email ang iyong report. Nakakatulong ang taas at timbang para i-tailor ang iyong analysis; opsyonal ang telepono.",
+    "helperEmail": "Ipapadala namin ang iyong report dito.",
+    "helper": "Nakakatulong ang height at weight para i-tailor ang iyong analysis.",
     "consent": "Sumasang-ayon ako na i-record ako at na gumawa ang Movaia ng account para maihatid ang aking analysis, ayon sa <bold>terms & privacy policy</bold>.",
+    "next": "Susunod",
     "start": "Simulan",
     "settingUp": "Nagse-set up…",
     "footer": "Sa pagpapatuloy, sumasang-ayon ka sa terms & privacy policy ng Movaia. Hindi kailanman ibinabahagi ang iyong datos sa ibang customer.",
@@ -41,7 +41,6 @@
       "lastName": "Pakilagay ang iyong apelyido.",
       "emailRequired": "Pakilagay ang iyong email para maipadala namin ang iyong report.",
       "emailInvalid": "Pakilagay ang wastong email address.",
-      "phone": "Pakilagay ang wastong numero ng telepono, o iwanang blangko.",
       "heightRequired": "Pakilagay ang iyong taas.",
       "heightInvalid": "Pakilagay ang makatotohanang taas.",
       "weightRequired": "Pakilagay ang iyong timbang.",
@@ -50,9 +49,7 @@
       "generic": "May nangyaring mali. Subukan muli o magtanong sa isang team member."
     },
     "hero": {
-      "titleAccent": "Bihasahin ang iyong mekanika.",
-      "titleRest": "Tumakbo nang mas mahusay.",
-      "desc": "Kumuha ng AI-powered na insight para pagbutihin ang iyong performance at maiwasan ang injury.",
+      "titleAccent": "Suriin natin ang iyong pagtakbo.",
       "features": {
         "analysis": {
           "title": "AI Analysis",
@@ -79,31 +76,22 @@
   },
   "getReady": {
     "step": "Hakbang 1 ng 3 · Maghanda",
-    "title": "I-set up ang iyong pagtakbo sa treadmill",
-    "subtitle": "Dalawang mabilis na bagay, saka kami magre-record ng maikling side-view na clip.",
-    "card1": {
-      "title": "Pwesto sa treadmill",
-      "body": "Mag-warm up at magbagay sa madali at natural na bilis ng pagtakbo bago tayo magsimula.",
-      "illo": "[ ilustrasyon: mananakbo sa treadmill ]"
-    },
-    "card2": {
-      "title": "I-frame ang iyong sarili nang patagilid",
-      "body": "Itayo ang iPad sa gilid mo para makita ang buong katawan mo mula ulo hanggang paa.",
-      "illo": "[ ilustrasyon: side-view na framing ]"
-    },
+    "title": "Tara, tumakbo na tayo",
+    "subtitle": "<bold>Mag-warm up muna</bold>",
+    "imageAlt": "I-frame ang iyong sarili nang patagilid",
     "whatNext": "Ano ang susunod na mangyayari",
     "next": {
       "getSet": {
-        "title": "{{count}} segundo para maghanda",
+        "title": "{{count}} segundo bago mag-record",
         "body": "Abutin ang iyong natural na bilis ng pagtakbo bago tayo magsimula."
       },
       "oneBeep": {
         "title": "Isang beep = magsisimula ang recording",
-        "body": "Magpatuloy lang sa pagtakbo — mga {{count}} segundo ang clip."
+        "body": "Magpatuloy lang sa pagtakbo, mga {{count}} segundo ang ire-record namin."
       },
       "twoBeeps": {
         "title": "Dalawang beep = magtatapos ang recording",
-        "body": "Tapos ka na — bagalan at bumaba."
+        "body": "Tapos na, bagalan mo at suriin ang clip."
       }
     },
     "cta": "Handa na ako — i-set up ang camera"

@@ -8,7 +8,9 @@
     "tryAgain": "もう一度試す",
     "cancel": "キャンセル",
     "confirm": "確定",
-    "signOut": "サインアウト"
+    "signOut": "サインアウト",
+    "openMenu": "メニューを開く",
+    "closeMenu": "メニューを閉じる"
   },
   "errorState": {
     "generic": "データの読み込み中に問題が発生しました。"

@@ -205,6 +205,34 @@ export default function StoreManagement() {
     }
   };
 
+  // Outlet-admin cell content — shared by the table (desktop) and cards (phones).
+  const renderAdmin = (s: Branch) =>
+    s.outletAdmin ? (
+      <span className="flex flex-col gap-0.5">
+        <span className="min-w-0 truncate" style={{ color: '#686868' }}>
+          {s.outletAdmin.email}
+        </span>
+        <span className="flex flex-wrap gap-2.5 text-[11px] font-semibold">
+          <button type="button" onClick={() => resendInvite(s.outletAdmin!)} style={{ color: '#7a9e1f' }}>
+            {t('stores.resend')}
+          </button>
+          <button type="button" onClick={() => resetAdmin(s.outletAdmin!)} style={{ color: '#7a9e1f' }}>
+            {t('stores.reset')}
+          </button>
+          <button type="button" onClick={() => removeAdmin(s)} style={{ color: '#b23a34' }}>
+            {t('stores.remove')}
+          </button>
+        </span>
+      </span>
+    ) : (
+      <span className="italic" style={{ color: '#9a9a9a' }}>
+        {t('stores.unassigned')} ·{' '}
+        <button type="button" onClick={() => openAssign(s.id)} className="font-semibold not-italic" style={{ color: '#7a9e1f' }}>
+          {t('stores.assign')}
+        </button>
+      </span>
+    );
+
   const total = stores?.length ?? 0;
   const active = stores?.filter((s) => s.isActive).length ?? 0;
   const assignBranch = stores?.find((s) => s.id === assigningId)?.name;
@@ -357,91 +385,105 @@ export default function StoreManagement() {
         </form>
       )}
 
-      {/* Table */}
+      {/* Branches */}
       <div className="overflow-hidden rounded-[14px]" style={{ background: '#fff', border: '1px solid #ececec' }}>
-        <div className="overflow-x-auto">
-          <div style={{ minWidth: 640 }}>
-            <div
-              className="grid px-5 py-[11px] text-[11px] font-bold uppercase tracking-[.5px]"
-              style={{ gridTemplateColumns: COLS, color: '#9a9a9a', background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}
-            >
-              <span>{t('stores.table.branch')}</span>
-              <span>{t('stores.table.outletAdmin')}</span>
-              <span>{t('stores.table.scans')}</span>
-              <span>{t('stores.table.status')}</span>
-              <span />
-            </div>
+        {stores === null ? (
+          <div className="px-5 py-6 text-[13px]" style={{ color: '#9a9a9a' }}>
+            {t('stores.loading')}
+          </div>
+        ) : (
+          <>
+            {/* Table — tablet / desktop */}
+            <div className="hidden overflow-x-auto sm:block">
+              <div style={{ minWidth: 640 }}>
+                <div
+                  className="grid px-5 py-[11px] text-[11px] font-bold uppercase tracking-[.5px]"
+                  style={{ gridTemplateColumns: COLS, color: '#9a9a9a', background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}
+                >
+                  <span>{t('stores.table.branch')}</span>
+                  <span>{t('stores.table.outletAdmin')}</span>
+                  <span>{t('stores.table.scans')}</span>
+                  <span>{t('stores.table.status')}</span>
+                  <span />
+                </div>
 
-            {stores === null && (
-              <div className="px-5 py-6 text-[13px]" style={{ color: '#9a9a9a' }}>
-                {t('stores.loading')}
-              </div>
-            )}
-
-            {stores?.map((s, i) => (
-              <div
-                key={s.id}
-                className="grid items-center px-5 py-[15px] text-[13px]"
-                style={{
-                  gridTemplateColumns: COLS,
-                  borderBottom: i === stores.length - 1 ? 'none' : '1px solid #f5f5f5',
-                  opacity: s.isActive ? 1 : 0.6,
-                }}
-              >
-                <span className="flex flex-col items-start gap-0.5">
-                  <b>{s.name}</b>
-                  <button
-                    type="button"
-                    onClick={() => openEdit(s)}
-                    className="text-[11px] font-semibold"
-                    style={{ color: '#7a9e1f' }}
+                {stores.map((s, i) => (
+                  <div
+                    key={s.id}
+                    className="grid items-center px-5 py-[15px] text-[13px]"
+                    style={{
+                      gridTemplateColumns: COLS,
+                      borderBottom: i === stores.length - 1 ? 'none' : '1px solid #f5f5f5',
+                      opacity: s.isActive ? 1 : 0.6,
+                    }}
                   >
-                    {t('stores.edit')}
-                  </button>
-                </span>
-                <span>
-                  {s.outletAdmin ? (
-                    <span className="flex flex-col gap-0.5">
-                      <span className="min-w-0 truncate" style={{ color: '#686868' }}>
-                        {s.outletAdmin.email}
-                      </span>
-                      <span className="flex flex-wrap gap-2.5 text-[11px] font-semibold">
-                        <button type="button" onClick={() => resendInvite(s.outletAdmin!)} style={{ color: '#7a9e1f' }}>
-                          {t('stores.resend')}
-                        </button>
-                        <button type="button" onClick={() => resetAdmin(s.outletAdmin!)} style={{ color: '#7a9e1f' }}>
-                          {t('stores.reset')}
-                        </button>
-                        <button type="button" onClick={() => removeAdmin(s)} style={{ color: '#b23a34' }}>
-                          {t('stores.remove')}
-                        </button>
-                      </span>
-                    </span>
-                  ) : (
-                    <span className="italic" style={{ color: '#9a9a9a' }}>
-                      {t('stores.unassigned')} ·{' '}
+                    <span className="flex flex-col items-start gap-0.5">
+                      <b>{s.name}</b>
                       <button
                         type="button"
-                        onClick={() => openAssign(s.id)}
-                        className="font-semibold not-italic"
+                        onClick={() => openEdit(s)}
+                        className="text-[11px] font-semibold"
                         style={{ color: '#7a9e1f' }}
                       >
-                        {t('stores.assign')}
+                        {t('stores.edit')}
                       </button>
                     </span>
-                  )}
-                </span>
-                <span>{fmtNum(s.scans)}</span>
-                <span>
-                  <StatusPill status={s.isActive ? 'ACTIVE' : 'PAUSED'} />
-                </span>
-                <span className="flex justify-end">
-                  <Toggle on={s.isActive} onChange={(next) => toggle(s, next)} aria-label={t('stores.toggleAria', { store: s.name })} />
-                </span>
+                    <span>{renderAdmin(s)}</span>
+                    <span>{fmtNum(s.scans)}</span>
+                    <span>
+                      <StatusPill status={s.isActive ? 'ACTIVE' : 'PAUSED'} />
+                    </span>
+                    <span className="flex justify-end">
+                      <Toggle on={s.isActive} onChange={(next) => toggle(s, next)} aria-label={t('stores.toggleAria', { store: s.name })} />
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+
+            {/* Cards — phones */}
+            <ul className="divide-y divide-[#f5f5f5] sm:hidden">
+              {stores.map((s) => (
+                <li
+                  key={s.id}
+                  className="flex flex-col gap-3 px-4 py-4"
+                  style={{ opacity: s.isActive ? 1 : 0.6 }}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <b className="truncate">{s.name}</b>
+                        <StatusPill status={s.isActive ? 'ACTIVE' : 'PAUSED'} />
+                      </div>
+                      <div className="mt-1.5 flex items-center gap-3 text-[12px]" style={{ color: '#686868' }}>
+                        <span>
+                          {t('stores.table.scans')}: {fmtNum(s.scans)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => openEdit(s)}
+                          className="font-semibold"
+                          style={{ color: '#7a9e1f' }}
+                        >
+                          {t('stores.edit')}
+                        </button>
+                      </div>
+                    </div>
+                    <span className="flex-none">
+                      <Toggle on={s.isActive} onChange={(next) => toggle(s, next)} aria-label={t('stores.toggleAria', { store: s.name })} />
+                    </span>
+                  </div>
+                  <div className="pt-3" style={{ borderTop: '1px solid #f0f0f0' }}>
+                    <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-[.5px]" style={{ color: '#9a9a9a' }}>
+                      {t('stores.table.outletAdmin')}
+                    </span>
+                    <div className="text-[13px]">{renderAdmin(s)}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </div>
         </>
       )}

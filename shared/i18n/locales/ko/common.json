@@ -8,7 +8,9 @@
     "tryAgain": "다시 시도",
     "cancel": "취소",
     "confirm": "확인",
-    "signOut": "로그아웃"
+    "signOut": "로그아웃",
+    "openMenu": "메뉴 열기",
+    "closeMenu": "메뉴 닫기"
   },
   "errorState": {
     "generic": "데이터를 불러오는 중 문제가 발생했습니다."

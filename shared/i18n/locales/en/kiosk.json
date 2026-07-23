@@ -15,12 +15,10 @@
   },
   "welcome": {
     "eyebrow": "Running gait analysis",
-    "title": "Let's analyze your run.",
-    "desc": "Enter your details and we'll email your personal analysis report — usually within a few minutes.",
+    "desc": "Enter your details",
     "firstName": "First name",
     "lastName": "Last name",
     "email": "Email address",
-    "phone": "Phone number (optional)",
     "height": "Height",
     "weight": "Weight",
     "heightCmAria": "Height in centimetres",
@@ -31,8 +29,10 @@
     "weightUnitAria": "Weight unit",
     "ft": "ft",
     "in": "in",
-    "helper": "We'll email your report here. Height & weight help tailor your analysis; phone is optional.",
+    "helperEmail": "We'll email your report here.",
+    "helper": "Height & weight help tailor your analysis.",
     "consent": "I agree to be recorded and to Movaia creating an account to deliver my analysis, per the <bold>terms & privacy policy</bold>.",
+    "next": "Next",
     "start": "Start",
     "settingUp": "Setting up…",
     "footer": "By continuing you agree to Movaia's terms & privacy policy. Your data is never shared with other customers.",
@@ -41,7 +41,6 @@
       "lastName": "Please enter your last name.",
       "emailRequired": "Please enter your email so we can send your report.",
       "emailInvalid": "Please enter a valid email address.",
-      "phone": "Please enter a valid phone number, or leave it blank.",
       "heightRequired": "Please enter your height.",
       "heightInvalid": "Please enter a realistic height.",
       "weightRequired": "Please enter your weight.",
@@ -50,9 +49,7 @@
       "generic": "Something went wrong. Please try again or ask a team member."
     },
     "hero": {
-      "titleAccent": "Master your mechanics.",
-      "titleRest": "Run better.",
-      "desc": "Get AI-powered insights to improve your performance and prevent injuries.",
+      "titleAccent": "Let's analyze your run.",
       "features": {
         "analysis": {
           "title": "AI Analysis",
@@ -79,31 +76,22 @@
   },
   "getReady": {
     "step": "Step 1 of 3 · Get ready",
-    "title": "Set up your treadmill run",
-    "subtitle": "Two quick things, then we'll record a short side-view clip.",
-    "card1": {
-      "title": "Position on the treadmill",
-      "body": "Warm up and settle into an easy, natural running pace before we start.",
-      "illo": "[ illustration: runner on treadmill ]"
-    },
-    "card2": {
-      "title": "Frame yourself side-on",
-      "body": "Stand the iPad to your side so your whole body is in view from head to toe.",
-      "illo": "[ illustration: side-view framing ]"
-    },
+    "title": "Let's get running",
+    "subtitle": "<bold>Warm up first</bold>",
+    "imageAlt": "Frame yourself side-on",
     "whatNext": "What happens next",
     "next": {
       "getSet": {
-        "title": "{{count}} seconds to get set",
+        "title": "{{count}} seconds until we start recording",
         "body": "Build up to your natural running pace before we start."
       },
       "oneBeep": {
         "title": "One beep = recording starts",
-        "body": "Just keep running — the clip is about {{count}} seconds."
+        "body": "Just keep running, we record for about {{count}} seconds."
       },
       "twoBeeps": {
         "title": "Two beeps = recording ends",
-        "body": "You're done — slow down and step off."
+        "body": "You're done, slow down and review."
       }
     },
     "cta": "I'm ready — set up camera"

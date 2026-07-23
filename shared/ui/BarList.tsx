@@ -19,9 +19,9 @@ export default function BarList({ items, max }: { items: BarItem[]; max?: number
         const pct = it.value / top;
         return (
           <div key={i} className="flex flex-col gap-[5px]">
-            <div className="flex justify-between text-xs">
-              <span className="font-semibold" style={{ color: '#000' }}>{it.label}</span>
-              <span style={{ color: '#686868' }}>{it.value.toLocaleString('en-US')}</span>
+            <div className="flex justify-between gap-2 text-xs">
+              <span className="min-w-0 truncate font-semibold" style={{ color: '#000' }}>{it.label}</span>
+              <span className="flex-none" style={{ color: '#686868' }}>{it.value.toLocaleString('en-US')}</span>
             </div>
             <span className="block h-2 overflow-hidden rounded" style={{ background: '#f0f0f0' }}>
               <span className="block h-full rounded" style={{ width: `${Math.max(4, pct * 100)}%`, background: shade(pct) }} />

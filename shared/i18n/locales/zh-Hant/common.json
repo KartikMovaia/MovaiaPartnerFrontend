@@ -8,7 +8,9 @@
     "tryAgain": "再試一次",
     "cancel": "取消",
     "confirm": "確認",
-    "signOut": "登出"
+    "signOut": "登出",
+    "openMenu": "開啟選單",
+    "closeMenu": "關閉選單"
   },
   "errorState": {
     "generic": "載入這筆資料時發生錯誤。"

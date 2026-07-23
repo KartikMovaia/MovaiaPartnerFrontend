@@ -58,7 +58,7 @@ export default function StaffLogin({
         />
         <form
           onSubmit={submit}
-          className="relative flex w-full max-w-[400px] flex-col gap-[18px] p-[38px]"
+          className="relative flex w-full max-w-[400px] flex-col gap-[18px] p-7 sm:p-[38px]"
           style={{
             background: '#fff',
             border: '1px solid #ececec',
@@ -113,15 +113,15 @@ export default function StaffLogin({
     <div className="flex min-h-screen flex-col md:flex-row">
       {/* Brand panel */}
       <div
-        className="flex flex-col justify-between p-11 md:flex-1"
+        className="flex flex-col justify-between p-8 sm:p-11 md:flex-1"
         style={{ background: '#FFFFFF', borderRight: '1px solid #ececec' }}
       >
         <img src="/assets/movaia-logo.png" alt="Movaia" style={{ height: 26 }} className="self-start" />
-        <div className="flex flex-col gap-3.5 py-10">
+        <div className="flex flex-col gap-3.5 py-8 md:py-10">
           <span className="font-accent text-[13px] font-semibold uppercase tracking-[3px]" style={{ color: '#7a9e1f' }}>
             {t('login.partnerEyebrow')}
           </span>
-          <h2 className="text-[34px] font-extrabold leading-[1.15] tracking-[-.6px]" style={{ color: '#141414' }}>
+          <h2 className="text-[28px] font-extrabold leading-[1.15] tracking-[-.6px] sm:text-[34px]" style={{ color: '#141414' }}>
             {t('login.partnerHeadline')}
           </h2>
           <p className="max-w-[340px] text-[15px] leading-[1.6]" style={{ color: '#686868' }}>
@@ -136,8 +136,7 @@ export default function StaffLogin({
       {/* Form panel */}
       <form
         onSubmit={submit}
-        className="flex w-full flex-col justify-center gap-5 bg-white md:w-[440px]"
-        style={{ padding: '40px 52px' }}
+        className="flex w-full flex-col justify-center gap-5 bg-white px-6 py-10 sm:px-10 md:w-[440px] md:px-[52px]"
       >
         <h1 className="text-[26px] font-extrabold tracking-[-.5px]">{t('login.signIn')}</h1>
 

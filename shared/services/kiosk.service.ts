@@ -63,9 +63,17 @@ export const kioskService = {
   // Direct presigned PUT to storage (plain axios — no auth headers on the
   // cross-origin PUT). Dev stub: the backend returns a placeholder URL no bucket
   // accepts, so skip the real PUT for stub URLs and let the flow complete.
+  // VITE_KIOSK_STUB_UPLOAD=1 additionally skips the PUT for a REAL (e.g. Movaia)
+  // presigned URL — for recording a marketing walk-through locally without AWS/S3.
+  // Never set in a production build; prod (Vercel) leaves it unset.
   async uploadVideo(uploadUrl: string, blob: Blob, onProgress?: (pct: number) => void): Promise<void> {
-    if (uploadUrl.includes('X-Amz-Stub-Presigned')) {
-      onProgress?.(100);
+    const stub = uploadUrl.includes('X-Amz-Stub-Presigned') || import.meta.env.VITE_KIOSK_STUB_UPLOAD === '1';
+    if (stub) {
+      // Ramp progress so the on-screen ring animates on camera, then resolve.
+      for (let p = 0; p <= 100; p += 10) {
+        onProgress?.(p);
+        await new Promise((r) => setTimeout(r, 80));
+      }
       return;
     }
     await axios.put(uploadUrl, blob, {

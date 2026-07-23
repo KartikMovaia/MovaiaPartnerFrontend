@@ -51,7 +51,6 @@ interface IdentifyDetails {
   firstName: string;
   lastName: string;
   email: string;
-  phone: string;
   heightCm: number;
   weightKg: number;
 }
@@ -60,6 +59,8 @@ const MOVAIA_LOGO = '/assets/movaia-logo.png';
 // Brand hero shown beside the details form on wider screens — mirrors the
 // Movaia login page's right panel (full-bleed photo + tagline + feature list).
 const WELCOME_IMAGE = '/assets/kiosk-welcome.jpg';
+// Get-ready illustration: a runner framed side-on, set up and ready to run.
+const SETUP_IMAGE = '/assets/kiosk-setup.png';
 
 // The three selling points listed over the hero photo (icons match the login).
 // Text is pulled from the `welcome.hero.features.<key>` catalog entries at render.
@@ -197,13 +198,13 @@ function DeviceSetup({
   return (
     <Screen>
       <KioskHeader theme={theme} />
-      <div className="flex flex-1 flex-col justify-center px-[90px]">
+      <div className="flex flex-1 flex-col justify-center px-6 sm:px-10 lg:px-[90px]">
         <form onSubmit={submit} className="flex w-full max-w-[520px] flex-col gap-4">
           <span className="text-[13px]" style={eyebrow}>{t('deviceSetup.eyebrow')}</span>
-          <h1 className="m-0 text-[40px] font-extrabold leading-[1.05]" style={{ letterSpacing: '-.8px' }}>
+          <h1 className="m-0 text-[30px] font-extrabold leading-[1.05] sm:text-[40px]" style={{ letterSpacing: '-.8px' }}>
             {t('deviceSetup.title')}
           </h1>
-          <p className="m-0 text-[17px] leading-[1.5]" style={{ color: '#686868' }}>
+          <p className="m-0 text-[16px] leading-[1.5] sm:text-[17px]" style={{ color: '#686868' }}>
             {t('deviceSetup.desc')}
           </p>
           {notice && (
@@ -313,7 +314,6 @@ function KioskFlow() {
       firstName: d.firstName,
       lastName: d.lastName,
       email: d.email,
-      phone: d.phone || undefined,
       heightCm: d.heightCm,
       weightKg: d.weightKg,
       consent: true,
@@ -397,7 +397,7 @@ function KioskFlow() {
 // fallback covers a broken upload — if the image 404s (e.g. a deleted/expired S3
 // object) we remember the bad URL and drop through to the wordmark instead of
 // showing a broken-image icon.
-function Wordmark({ theme, size = 26, logoHeight = 46 }: { theme: PartnerTheme; size?: number; logoHeight?: number }) {
+function Wordmark({ theme, size = 26 }: { theme: PartnerTheme; size?: number }) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const { logoUrl } = theme;
   if (logoUrl && logoUrl !== failedUrl) {
@@ -406,8 +406,9 @@ function Wordmark({ theme, size = 26, logoHeight = 46 }: { theme: PartnerTheme; 
         src={logoUrl}
         alt={theme.displayName}
         // An uploaded logo gets more room than the generated wordmark, but is
-        // bounded so a very wide mark can't crowd the "Powered by" logo.
-        style={{ height: logoHeight, maxWidth: 280, objectFit: 'contain' }}
+        // bounded so a very wide mark can't crowd the "Powered by" logo. Smaller
+        // and tighter on phones so it never pushes the language pill off-screen.
+        className="h-9 max-w-[150px] object-contain sm:h-[46px] sm:max-w-[280px]"
         onError={() => setFailedUrl(logoUrl)}
       />
     );
@@ -426,12 +427,13 @@ function Wordmark({ theme, size = 26, logoHeight = 46 }: { theme: PartnerTheme; 
 function KioskHeader({ theme }: { theme: PartnerTheme }) {
   const { t } = useTranslation('kiosk');
   return (
-    <div className="flex items-center justify-between px-10 py-6">
+    <div className="flex items-center justify-between gap-3 px-5 py-4 sm:px-10 sm:py-6">
       <Wordmark theme={theme} />
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         {/* Customer language picker — the choice lasts this session and resets on reset. */}
         <LanguageSwitcher variant="kiosk" />
-        <div className="flex items-center gap-2" style={{ opacity: 0.65 }}>
+        {/* "Powered by Movaia" — hidden on phones to keep the header on one row. */}
+        <div className="hidden items-center gap-2 sm:flex" style={{ opacity: 0.65 }}>
           <span className="text-xs" style={{ color: '#686868' }}>{t('poweredBy')}</span>
           <img src={MOVAIA_LOGO} alt="Movaia" style={{ height: 16 }} />
         </div>
@@ -540,10 +542,12 @@ function SegToggle<T extends string>({
 
 function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: IdentifyDetails) => Promise<void> }) {
   const { t } = useTranslation('kiosk');
+  // The form is split in two so neither panel feels crowded: who you are, then
+  // your body measurements + consent.
+  const [formStep, setFormStep] = useState<1 | 2>(1);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [heightUnit, setHeightUnit] = useState<HeightUnit>('cm');
   const [heightCm, setHeightCm] = useState('');
   const [heightFt, setHeightFt] = useState('');
@@ -558,9 +562,20 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
   const cm = heightToCm(heightUnit, heightCm, heightFt, heightIn);
   const kg = weightToKg(weightUnit, weight);
   const heightValid = cm !== null && cm >= HEIGHT_MIN_CM && cm <= HEIGHT_MAX_CM;
+  const whoValid = firstName.trim() !== '' && lastName.trim() !== '' && emailValid;
   const weightValid = kg !== null && kg >= WEIGHT_MIN_KG && kg <= WEIGHT_MAX_KG;
-  const ready =
-    firstName.trim() !== '' && lastName.trim() !== '' && emailValid && heightValid && weightValid && consent;
+  const ready = whoValid && heightValid && weightValid && consent;
+
+  // Step 1 → 2. Re-checks the same fields `start` does, so a bad value can't
+  // slip past the disabled button and only surface at submit.
+  const next = () => {
+    if (!firstName.trim()) return setError(t('welcome.errors.firstName'));
+    if (!lastName.trim()) return setError(t('welcome.errors.lastName'));
+    if (!email.trim()) return setError(t('welcome.errors.emailRequired'));
+    if (!emailValid) return setError(t('welcome.errors.emailInvalid'));
+    setError(null);
+    setFormStep(2);
+  };
 
   const start = async () => {
     if (busy) return;
@@ -568,7 +583,6 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
     if (!lastName.trim()) return setError(t('welcome.errors.lastName'));
     if (!email.trim()) return setError(t('welcome.errors.emailRequired'));
     if (!emailValid) return setError(t('welcome.errors.emailInvalid'));
-    if (phone.trim() && phone.replace(/\D/g, '').length < 7) return setError(t('welcome.errors.phone'));
     if (cm === null) return setError(t('welcome.errors.heightRequired'));
     if (!heightValid) return setError(t('welcome.errors.heightInvalid'));
     if (kg === null) return setError(t('welcome.errors.weightRequired'));
@@ -581,7 +595,6 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.trim(),
-        phone: phone.trim(),
         heightCm: cm,
         weightKg: kg,
       });
@@ -599,81 +612,9 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
 
   return (
     <div className="flex min-h-screen w-full bg-white">
-      {/* Left: intro + details form. This is the only column below `lg`; the
-          photo panel to the right appears once there's room to spare. `min-w-0`
-          lets this flex column shrink below its content's intrinsic width so
-          the header/inputs never overflow on narrow screens. */}
-      <div className="flex min-h-screen flex-1 flex-col min-w-0">
-        <KioskHeader theme={theme} />
-        <div className="flex flex-1 flex-col justify-center gap-7 px-6 sm:px-10 lg:px-12 xl:px-16 2xl:px-[90px]">
-        <div className="flex flex-col gap-2.5">
-          <span className="text-[14px]" style={eyebrow}>{t('welcome.eyebrow')}</span>
-          <h1 className="m-0 text-[46px] font-extrabold leading-[1.05]" style={{ letterSpacing: '-1px' }}>
-            {t('welcome.title')}
-          </h1>
-          <p className="m-0 max-w-[560px] text-[19px] leading-[1.5]" style={{ color: '#686868' }}>
-            {t('welcome.desc')}
-          </p>
-        </div>
-        <div className="flex max-w-[620px] flex-col gap-3.5">
-          {/* Name — first + last, side by side */}
-          <div className="flex gap-3.5">
-            <input className={`${input} min-w-0 flex-1`} aria-label={t('welcome.firstName')} autoComplete="off" style={{ borderColor: '#e4e4e4' }} placeholder={t('welcome.firstName')} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-            <input className={`${input} min-w-0 flex-1`} aria-label={t('welcome.lastName')} autoComplete="off" style={{ borderColor: '#e4e4e4' }} placeholder={t('welcome.lastName')} value={lastName} onChange={(e) => setLastName(e.target.value)} />
-          </div>
-          <input className={input} type="email" inputMode="email" autoComplete="off" aria-label={t('welcome.email')} style={{ borderColor: 'var(--brand-primary)' }} placeholder={t('welcome.email')} value={email} onChange={(e) => setEmail(e.target.value)} />
-          <input className={input} type="tel" inputMode="tel" autoComplete="off" aria-label={t('welcome.phone')} style={{ borderColor: '#e4e4e4' }} placeholder={t('welcome.phone')} value={phone} onChange={(e) => setPhone(e.target.value)} />
-          {/* Height + weight — value(s) with a unit toggle each */}
-          <div className="flex gap-3.5">
-            <div className="flex min-w-0 flex-1 gap-2">
-              {heightUnit === 'cm' ? (
-                <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="decimal" aria-label={t('welcome.heightCmAria')} placeholder={t('welcome.height')} value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
-              ) : (
-                <>
-                  <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="numeric" aria-label={t('welcome.heightFtAria')} placeholder={t('welcome.ft')} value={heightFt} onChange={(e) => setHeightFt(e.target.value)} />
-                  <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="numeric" aria-label={t('welcome.heightInAria')} placeholder={t('welcome.in')} value={heightIn} onChange={(e) => setHeightIn(e.target.value)} />
-                </>
-              )}
-              <SegToggle ariaLabel={t('welcome.heightUnitAria')} value={heightUnit} options={HEIGHT_UNITS} onChange={setHeightUnit} />
-            </div>
-            <div className="flex min-w-0 flex-1 gap-2">
-              <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="decimal" aria-label={t('welcome.weightAria')} placeholder={t('welcome.weight')} value={weight} onChange={(e) => setWeight(e.target.value)} />
-              <SegToggle ariaLabel={t('welcome.weightUnitAria')} value={weightUnit} options={WEIGHT_UNITS} onChange={setWeightUnit} />
-            </div>
-          </div>
-          <span className="pl-1 text-[14px]" style={{ color: '#9a9a9a' }}>{t('welcome.helper')}</span>
-          <label className="flex cursor-pointer items-start gap-3 pl-1 pt-1">
-            <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-6 w-6 flex-none" style={{ accentColor: 'var(--brand-primary)' }} />
-            <span className="text-[15px] leading-[1.45]" style={{ color: '#686868' }}>
-              <Trans t={t} i18nKey="welcome.consent" components={{ bold: <b style={{ color: '#141414' }} /> }} />
-            </span>
-          </label>
-          {error && (
-            <span className="pl-1 text-[15px]" style={{ color: '#c5352b' }}>
-              {error}
-            </span>
-          )}
-        </div>
-        <button
-          onClick={start}
-          disabled={!ready || busy}
-          className="flex h-[72px] max-w-[620px] items-center justify-center gap-3 rounded-[14px] text-[22px] font-bold disabled:opacity-40"
-          style={brandBtn}
-        >
-          {busy ? t('welcome.settingUp') : `${t('welcome.start')}  →`}
-        </button>
-        </div>
-        <div className="px-6 pb-[30px] pt-[22px] sm:px-10 lg:px-12 xl:px-16 2xl:px-[90px]">
-          <span className="text-[13px]" style={{ color: '#9a9a9a' }}>
-            {t('welcome.footer')}
-          </span>
-        </div>
-      </div>
-
-      {/* Right: brand hero — mirrors the Movaia login's right panel. Full-bleed
-          photo with a dark bottom gradient, then the tagline + feature list
-          anchored to the bottom. Desktop/tablet only; below `lg` it's hidden
-          and the form takes the full width, so nothing is lost on phones. */}
+      {/* Left: brand hero — full-bleed photo with a dark bottom gradient, then
+          the tagline + feature list anchored to the bottom. Desktop/tablet only;
+          below `lg` it's hidden and the form takes the full width. */}
       <div
         className="relative hidden flex-col justify-end lg:flex lg:flex-1"
         style={{
@@ -694,14 +635,10 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
         />
 
         <div className="relative z-10 p-12 pb-14">
-          <h3 className="mb-4 text-5xl font-extrabold leading-tight">
-            <span style={{ color: 'var(--brand-primary)' }}>{t('welcome.hero.titleAccent')}</span>
-            <br />
-            <span className="text-white">{t('welcome.hero.titleRest')}</span>
-          </h3>
-          <p className="mb-8 max-w-sm text-base text-white/80">
-            {t('welcome.hero.desc')}
-          </p>
+          {/* The hero now carries the screen's main title, so it's the h1. */}
+          <h1 className="mb-8 text-5xl font-extrabold leading-tight" style={{ color: 'var(--brand-primary)' }}>
+            {t('welcome.hero.titleAccent')}
+          </h1>
 
           <div className="space-y-5">
             {HERO_FEATURES.map((f) => (
@@ -719,6 +656,91 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Right: intro + details form. This is the only column below `lg`; the
+          photo panel to the left appears once there's room to spare. `min-w-0`
+          lets this flex column shrink below its content's intrinsic width so
+          the header/inputs never overflow on narrow screens. */}
+      <div className="flex min-h-screen flex-1 flex-col min-w-0">
+        <KioskHeader theme={theme} />
+        <div className="flex flex-1 flex-col justify-center gap-7 px-6 sm:px-10 lg:px-12 xl:px-16 2xl:px-[90px]">
+        <div className="flex flex-col gap-2.5">
+          <span className="text-[14px]" style={eyebrow}>{t('welcome.eyebrow')}</span>
+          {/* Headline — the brand hero carries it on lg+, so surface it here on
+              phones/tablets where the hero panel is hidden (no headless screen). */}
+          <h1 className="m-0 text-[30px] font-extrabold leading-[1.05] sm:text-[38px] lg:hidden" style={{ letterSpacing: '-1px' }}>
+            {t('welcome.hero.titleAccent')}
+          </h1>
+          <p className="m-0 max-w-[560px] text-[17px] leading-[1.5] sm:text-[19px]" style={{ color: '#686868' }}>
+            {t('welcome.desc')}
+          </p>
+        </div>
+        <div className="flex max-w-[620px] flex-col gap-3.5">
+          {formStep === 1 ? (
+            <>
+              {/* Name — first + last, side by side */}
+              <div className="flex gap-3.5">
+                <input className={`${input} min-w-0 flex-1`} aria-label={t('welcome.firstName')} autoComplete="off" style={{ borderColor: '#e4e4e4' }} placeholder={t('welcome.firstName')} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                <input className={`${input} min-w-0 flex-1`} aria-label={t('welcome.lastName')} autoComplete="off" style={{ borderColor: '#e4e4e4' }} placeholder={t('welcome.lastName')} value={lastName} onChange={(e) => setLastName(e.target.value)} />
+              </div>
+              <input className={input} type="email" inputMode="email" autoComplete="off" aria-label={t('welcome.email')} style={{ borderColor: 'var(--brand-primary)' }} placeholder={t('welcome.email')} value={email} onChange={(e) => setEmail(e.target.value)} />
+              <span className="pl-1 text-[14px]" style={{ color: '#9a9a9a' }}>{t('welcome.helperEmail')}</span>
+            </>
+          ) : (
+            <>
+              {/* Height + weight — value(s) with a unit toggle each. Stacked on
+                  phones so each value + its toggle has room; side by side from sm up. */}
+              <div className="flex flex-col gap-3.5 sm:flex-row">
+                <div className="flex min-w-0 flex-1 gap-2">
+                  {heightUnit === 'cm' ? (
+                    <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="decimal" aria-label={t('welcome.heightCmAria')} placeholder={t('welcome.height')} value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
+                  ) : (
+                    <>
+                      <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="numeric" aria-label={t('welcome.heightFtAria')} placeholder={t('welcome.ft')} value={heightFt} onChange={(e) => setHeightFt(e.target.value)} />
+                      <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="numeric" aria-label={t('welcome.heightInAria')} placeholder={t('welcome.in')} value={heightIn} onChange={(e) => setHeightIn(e.target.value)} />
+                    </>
+                  )}
+                  <SegToggle ariaLabel={t('welcome.heightUnitAria')} value={heightUnit} options={HEIGHT_UNITS} onChange={setHeightUnit} />
+                </div>
+                <div className="flex min-w-0 flex-1 gap-2">
+                  <input className={numInput} style={{ borderColor: '#e4e4e4' }} type="number" inputMode="decimal" aria-label={t('welcome.weightAria')} placeholder={t('welcome.weight')} value={weight} onChange={(e) => setWeight(e.target.value)} />
+                  <SegToggle ariaLabel={t('welcome.weightUnitAria')} value={weightUnit} options={WEIGHT_UNITS} onChange={setWeightUnit} />
+                </div>
+              </div>
+              <span className="pl-1 text-[14px]" style={{ color: '#9a9a9a' }}>{t('welcome.helper')}</span>
+              <label className="flex cursor-pointer items-start gap-3 pl-1 pt-1">
+                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-6 w-6 flex-none" style={{ accentColor: 'var(--brand-primary)' }} />
+                <span className="text-[15px] leading-[1.45]" style={{ color: '#686868' }}>
+                  <Trans t={t} i18nKey="welcome.consent" components={{ bold: <b style={{ color: '#141414' }} /> }} />
+                </span>
+              </label>
+            </>
+          )}
+          {error && (
+            <span className="pl-1 text-[15px]" style={{ color: '#c5352b' }}>
+              {error}
+            </span>
+          )}
+        </div>
+        <button
+          onClick={formStep === 1 ? next : start}
+          disabled={formStep === 1 ? !whoValid : !ready || busy}
+          className="flex h-[72px] max-w-[620px] items-center justify-center gap-3 rounded-[14px] text-[22px] font-bold disabled:opacity-40"
+          style={brandBtn}
+        >
+          {formStep === 1
+            ? `${t('welcome.next')}  →`
+            : busy
+              ? t('welcome.settingUp')
+              : `${t('welcome.start')}  →`}
+        </button>
+        </div>
+        <div className="px-6 pb-[30px] pt-[22px] sm:px-10 lg:px-12 xl:px-16 2xl:px-[90px]">
+          <span className="text-[13px]" style={{ color: '#9a9a9a' }}>
+            {t('welcome.footer')}
+          </span>
         </div>
       </div>
     </div>
@@ -742,19 +764,19 @@ function Returning({
   return (
     <Screen>
       <KioskHeader theme={theme} />
-      <div className="flex flex-1 flex-col items-center justify-center gap-[30px] px-[90px] text-center">
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6 text-center sm:gap-[30px] sm:px-10 lg:px-[90px]">
         <div
-          className="flex h-[120px] w-[120px] items-center justify-center rounded-full text-[46px] font-extrabold"
+          className="flex h-[92px] w-[92px] items-center justify-center rounded-full text-[36px] font-extrabold sm:h-[120px] sm:w-[120px] sm:text-[46px]"
           style={{ background: 'color-mix(in srgb, var(--brand-primary) 16%, #fff)', color: 'var(--brand-primary)' }}
         >
           {customer.initials ?? customer.firstName.slice(0, 2).toUpperCase()}
         </div>
         <div className="flex flex-col gap-3">
           <span className="text-[14px]" style={eyebrow}>{t('returning.eyebrow')}</span>
-          <h1 className="m-0 text-[48px] font-extrabold leading-[1.05]" style={{ letterSpacing: '-1px' }}>
+          <h1 className="m-0 text-[32px] font-extrabold leading-[1.05] sm:text-[44px] lg:text-[48px]" style={{ letterSpacing: '-1px' }}>
             {t('returning.title', { name: customer.firstName })}
           </h1>
-          <p className="m-0 max-w-[560px] text-[19px] leading-[1.5]" style={{ color: '#686868' }}>
+          <p className="m-0 max-w-[560px] text-[17px] leading-[1.5] sm:text-[19px]" style={{ color: '#686868' }}>
             <Trans t={t} i18nKey="returning.desc" values={{ email: customer.email }} components={{ bold: <b style={{ color: '#141414' }} /> }} />
           </p>
         </div>
@@ -776,18 +798,12 @@ function Returning({
 
 function GetReady({ onReady }: { onReady: () => void }) {
   const { t } = useTranslation('kiosk');
-  const card = 'flex flex-1 flex-col gap-4 rounded-[18px] border-2 p-[26px]';
-  const numChip = 'flex h-[52px] w-[52px] items-center justify-center rounded-[14px] text-[22px] font-extrabold';
-  const chipStyle = { background: 'color-mix(in srgb, var(--brand-primary) 14%, #fff)', color: 'var(--brand-primary)' };
-  const illo = 'mt-2 flex min-h-[150px] flex-1 items-center justify-center rounded-[12px] font-mono text-xs';
-  const illoStyle = {
-    color: '#9a9a9a',
-    background: 'repeating-linear-gradient(135deg,#f4f4f4,#f4f4f4 11px,#eee 11px,#eee 22px)',
-  };
+  const numChip = 'flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-[17px] font-extrabold';
+  const chipStyle = { background: 'color-mix(in srgb, var(--brand-primary) 16%, #fff)', color: 'var(--brand-primary)' };
 
   return (
     <Screen>
-      <div className="flex min-h-screen flex-col px-[60px] py-10">
+      <div className="flex min-h-screen flex-col px-5 py-8 sm:px-10 sm:py-10 lg:px-[60px]">
         <div className="mb-1.5 flex items-center justify-between">
           <span className="text-[15px] font-semibold" style={{ color: '#686868' }}>{t('getReady.step')}</span>
           <div className="flex gap-1.5">
@@ -796,41 +812,48 @@ function GetReady({ onReady }: { onReady: () => void }) {
             <span className="h-1.5 w-[34px] rounded-sm" style={{ background: '#e4e4e4' }} />
           </div>
         </div>
-        <h1 className="mb-1 mt-3.5 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>{t('getReady.title')}</h1>
-        <p className="mb-[26px] text-[19px]" style={{ color: '#686868' }}>{t('getReady.subtitle')}</p>
+        <h1 className="mb-1 mt-3.5 text-[30px] font-extrabold sm:text-[40px]" style={{ letterSpacing: '-.8px' }}>{t('getReady.title')}</h1>
+        <p className="mb-[26px] text-[17px] sm:text-[19px]" style={{ color: '#686868' }}>
+          <Trans t={t} i18nKey="getReady.subtitle" components={{ bold: <b style={{ color: '#141414' }} /> }} />
+        </p>
+        {/* Illustration and recording steps share a row: the landscape iPad has
+            far more width than height, so side-by-side buys the artwork height. */}
         <div className="grid flex-1 grid-cols-1 gap-[22px] md:grid-cols-2">
-          {[
-            { n: 1, title: t('getReady.card1.title'), body: t('getReady.card1.body'), label: t('getReady.card1.illo') },
-            { n: 2, title: t('getReady.card2.title'), body: t('getReady.card2.body'), label: t('getReady.card2.illo') },
-          ].map((c) => (
-            <div key={c.n} className={card} style={{ borderColor: '#eee' }}>
-              <span className={numChip} style={chipStyle}>{c.n}</span>
-              <b className="text-[22px]">{c.title}</b>
-              <p className="m-0 text-[16px] leading-[1.55]" style={{ color: '#686868' }}>{c.body}</p>
-              <div className={illo} style={illoStyle}>{c.label}</div>
+          {/* Framing illustration — a runner set up side-on, ready to run.
+              Absolutely positioned so its intrinsic size can't feed back into
+              the layout and push the CTA off a short iPad. */}
+          <div className="relative min-h-[200px] overflow-hidden rounded-[18px]">
+            <img
+              src={SETUP_IMAGE}
+              alt={t('getReady.imageAlt')}
+              className="absolute inset-0 h-full w-full object-contain"
+            />
+          </div>
+          {/* What happens during recording — prep time + the beep signals.
+              Centred vertically: the panel stretches to the illustration's
+              height, so short step lists would otherwise sit in dead space. */}
+          <div
+            className="flex flex-col justify-center rounded-[16px] px-5 py-5 sm:px-7 sm:py-[22px]"
+            style={{ background: 'color-mix(in srgb, var(--brand-primary) 7%, #fff)' }}
+          >
+            <b className="text-[13px] font-bold uppercase tracking-[1.5px]" style={{ color: '#141414' }}>
+              {t('getReady.whatNext')}
+            </b>
+            <div className="mt-4 flex flex-col gap-5">
+              {[
+                { n: 1, title: t('getReady.next.getSet.title', { count: SETUP_SECONDS }), body: t('getReady.next.getSet.body') },
+                { n: 2, title: t('getReady.next.oneBeep.title'), body: t('getReady.next.oneBeep.body', { count: RECORD_SECONDS }) },
+                { n: 3, title: t('getReady.next.twoBeeps.title'), body: t('getReady.next.twoBeeps.body') },
+              ].map((s) => (
+                <div key={s.n} className="flex gap-4">
+                  <span className={numChip} style={chipStyle}>{s.n}</span>
+                  <div className="flex flex-col gap-1">
+                    <b className="text-[16px]" style={{ color: '#141414' }}>{s.title}</b>
+                    <span className="text-[15px] leading-[1.45]" style={{ color: '#686868' }}>{s.body}</span>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        {/* What happens during recording — prep time + the beep signals */}
-        <div
-          className="mt-5 rounded-[16px] px-7 py-[22px]"
-          style={{ background: 'color-mix(in srgb, var(--brand-primary) 7%, #fff)' }}
-        >
-          <b className="text-[13px] font-bold uppercase tracking-[1.5px]" style={{ color: '#141414' }}>
-            {t('getReady.whatNext')}
-          </b>
-          <div className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-3">
-            {[
-              { icon: '⏱️', title: t('getReady.next.getSet.title', { count: SETUP_SECONDS }), body: t('getReady.next.getSet.body') },
-              { icon: '🔊', title: t('getReady.next.oneBeep.title'), body: t('getReady.next.oneBeep.body', { count: RECORD_SECONDS }) },
-              { icon: '🔊🔊', title: t('getReady.next.twoBeeps.title'), body: t('getReady.next.twoBeeps.body') },
-            ].map((s) => (
-              <div key={s.title} className="flex flex-col gap-2">
-                <span className="text-[28px] leading-none">{s.icon}</span>
-                <b className="text-[16px]" style={{ color: '#141414' }}>{s.title}</b>
-                <span className="text-[15px] leading-[1.45]" style={{ color: '#686868' }}>{s.body}</span>
-              </div>
-            ))}
           </div>
         </div>
         <button
@@ -1044,9 +1067,9 @@ function Review({ blob, onRecordAgain, onSubmit }: { blob: Blob | null; onRecord
 
   return (
     <Screen>
-      <div className="flex min-h-screen flex-col px-[60px] py-10">
-        <h1 className="mb-1 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>{t('review.title')}</h1>
-        <p className="mb-[22px] text-[19px]" style={{ color: '#686868' }}>{t('review.subtitle')}</p>
+      <div className="flex min-h-screen flex-col px-5 py-8 sm:px-10 sm:py-10 lg:px-[60px]">
+        <h1 className="mb-1 text-[30px] font-extrabold sm:text-[40px]" style={{ letterSpacing: '-.8px' }}>{t('review.title')}</h1>
+        <p className="mb-[22px] text-[17px] sm:text-[19px]" style={{ color: '#686868' }}>{t('review.subtitle')}</p>
         <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-[18px]" style={{ background: 'linear-gradient(135deg,#1b2430,#0e141c)' }}>
           {url ? (
             <video src={url} controls autoPlay muted playsInline className="h-full w-full object-contain" />
@@ -1119,17 +1142,17 @@ function Uploading({
 
   return (
     <Screen>
-      <div className="flex min-h-screen flex-col items-center justify-center gap-[34px] px-[90px] text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-8 px-6 text-center sm:gap-[34px] sm:px-10">
         <div className="relative flex h-[150px] w-[150px] items-center justify-center">
           <span className="absolute inset-0 rounded-full" style={{ border: '8px solid #eef2f2' }} />
           <span className="absolute inset-0 animate-mv-spin rounded-full" style={{ border: '8px solid var(--brand-primary)', borderRightColor: 'transparent', borderTopColor: 'transparent' }} />
           <span className="tnum text-[34px] font-extrabold" style={{ color: '#141414' }}>{pct}%</span>
         </div>
         <div className="flex flex-col gap-2.5">
-          <h1 className="m-0 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>{t('uploading.title')}</h1>
-          <p className="m-0 text-[19px]" style={{ color: '#686868' }}>{t('uploading.subtitle')}</p>
+          <h1 className="m-0 text-[30px] font-extrabold sm:text-[40px]" style={{ letterSpacing: '-.8px' }}>{t('uploading.title')}</h1>
+          <p className="m-0 text-[17px] sm:text-[19px]" style={{ color: '#686868' }}>{t('uploading.subtitle')}</p>
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center justify-center gap-2.5">
           <span className={chip} style={{ background: '#eef6dd', color: '#5a7d16' }}>✓ {t('uploading.clipCaptured')}</span>
           <span className={chip} style={{ background: '#fdf0d9', color: '#a9720d' }}>
             <span className="h-[7px] w-[7px] animate-mv-pulse rounded-full" style={{ background: '#e0930f' }} />{t('uploading.uploading')}
@@ -1156,11 +1179,11 @@ function Confirmation({ email, onDone }: { email: string; onDone: () => void }) 
   }, [secs, onDone]);
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center gap-[30px] px-[90px] text-center" style={{ background: 'var(--brand-primary)' }}>
-      <div className="flex h-[130px] w-[130px] items-center justify-center rounded-full bg-white text-[60px]" style={{ color: 'var(--brand-primary)' }}>✓</div>
+    <div className="flex min-h-screen w-full flex-col items-center justify-center gap-7 px-6 text-center sm:gap-[30px] sm:px-10" style={{ background: 'var(--brand-primary)' }}>
+      <div className="flex h-[100px] w-[100px] items-center justify-center rounded-full bg-white text-[46px] sm:h-[130px] sm:w-[130px] sm:text-[60px]" style={{ color: 'var(--brand-primary)' }}>✓</div>
       <div className="flex flex-col gap-3.5">
-        <h1 className="m-0 text-[52px] font-extrabold text-white" style={{ letterSpacing: '-1px' }}>{t('confirmation.title')}</h1>
-        <p className="m-0 max-w-[600px] text-[21px] leading-[1.5]" style={{ color: 'rgba(255,255,255,.9)' }}>
+        <h1 className="m-0 text-[34px] font-extrabold text-white sm:text-[46px] lg:text-[52px]" style={{ letterSpacing: '-1px' }}>{t('confirmation.title')}</h1>
+        <p className="m-0 max-w-[600px] text-[17px] leading-[1.5] sm:text-[21px]" style={{ color: 'rgba(255,255,255,.9)' }}>
           <Trans t={t} i18nKey="confirmation.desc" values={{ email: email || t('confirmation.inbox') }} components={{ bold: <b className="text-white" /> }} />
         </p>
       </div>
@@ -1180,19 +1203,19 @@ function CameraDenied({ theme, onRetry, onHome }: { theme: PartnerTheme; onRetry
   const { t } = useTranslation('kiosk');
   return (
     <Screen>
-      <div className="flex min-h-screen flex-col items-center justify-center gap-7 px-[100px] text-center">
-        <div className="flex h-[120px] w-[120px] items-center justify-center rounded-[28px] text-[56px]" style={{ background: '#fce7e6', color: '#d64a43' }}>⚠</div>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center sm:gap-7 sm:px-10">
+        <div className="flex h-[96px] w-[96px] items-center justify-center rounded-[28px] text-[44px] sm:h-[120px] sm:w-[120px] sm:text-[56px]" style={{ background: '#fce7e6', color: '#d64a43' }}>⚠</div>
         <div className="flex flex-col gap-3">
-          <h1 className="m-0 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>{t('cameraDenied.title')}</h1>
-          <p className="m-0 max-w-[600px] text-[19px] leading-[1.55]" style={{ color: '#686868' }}>
+          <h1 className="m-0 text-[30px] font-extrabold sm:text-[40px]" style={{ letterSpacing: '-.8px' }}>{t('cameraDenied.title')}</h1>
+          <p className="m-0 max-w-[600px] text-[17px] leading-[1.55] sm:text-[19px]" style={{ color: '#686868' }}>
             <Trans t={t} i18nKey="cameraDenied.desc" values={{ partner: theme.displayName }} components={{ bold: <b style={{ color: '#141414' }} /> }} />
           </p>
         </div>
-        <div className="flex gap-3.5">
-          <button onClick={onHome} className="h-[66px] rounded-[14px] border-2 px-[34px] text-[18px] font-semibold" style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}>
+        <div className="flex w-full max-w-[420px] flex-col gap-3.5 sm:w-auto sm:max-w-none sm:flex-row">
+          <button onClick={onHome} className="h-[66px] w-full rounded-[14px] border-2 px-[34px] text-[18px] font-semibold sm:w-auto" style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}>
             {t('cameraDenied.getHelp')}
           </button>
-          <button onClick={onRetry} className="h-[66px] rounded-[14px] px-10 text-[19px] font-bold" style={brandBtn}>
+          <button onClick={onRetry} className="h-[66px] w-full rounded-[14px] px-10 text-[19px] font-bold sm:w-auto" style={brandBtn}>
             {t('cameraDenied.tryAgain')}
           </button>
         </div>
@@ -1207,19 +1230,19 @@ function UploadFailed({ theme, onRetry, onHome }: { theme: PartnerTheme; onRetry
   const { t } = useTranslation('kiosk');
   return (
     <Screen>
-      <div className="flex min-h-screen flex-col items-center justify-center gap-7 px-[100px] text-center">
-        <div className="flex h-[120px] w-[120px] items-center justify-center rounded-[28px] text-[56px]" style={{ background: '#fce7e6', color: '#d64a43' }}>⟳</div>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center sm:gap-7 sm:px-10">
+        <div className="flex h-[96px] w-[96px] items-center justify-center rounded-[28px] text-[44px] sm:h-[120px] sm:w-[120px] sm:text-[56px]" style={{ background: '#fce7e6', color: '#d64a43' }}>⟳</div>
         <div className="flex flex-col gap-3">
-          <h1 className="m-0 text-[40px] font-extrabold" style={{ letterSpacing: '-.8px' }}>{t('uploadFailed.title')}</h1>
-          <p className="m-0 max-w-[600px] text-[19px] leading-[1.55]" style={{ color: '#686868' }}>
+          <h1 className="m-0 text-[30px] font-extrabold sm:text-[40px]" style={{ letterSpacing: '-.8px' }}>{t('uploadFailed.title')}</h1>
+          <p className="m-0 max-w-[600px] text-[17px] leading-[1.55] sm:text-[19px]" style={{ color: '#686868' }}>
             {t('uploadFailed.desc')}
           </p>
         </div>
-        <div className="flex gap-3.5">
-          <button onClick={onHome} className="h-[66px] rounded-[14px] border-2 px-[34px] text-[18px] font-semibold" style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}>
+        <div className="flex w-full max-w-[420px] flex-col gap-3.5 sm:w-auto sm:max-w-none sm:flex-row">
+          <button onClick={onHome} className="h-[66px] w-full rounded-[14px] border-2 px-[34px] text-[18px] font-semibold sm:w-auto" style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}>
             {t('uploadFailed.startOver')}
           </button>
-          <button onClick={onRetry} className="h-[66px] rounded-[14px] px-10 text-[19px] font-bold" style={brandBtn}>
+          <button onClick={onRetry} className="h-[66px] w-full rounded-[14px] px-10 text-[19px] font-bold sm:w-auto" style={brandBtn}>
             ↻ {t('uploadFailed.retry')}
           </button>
         </div>
