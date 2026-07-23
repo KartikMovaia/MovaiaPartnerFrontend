@@ -35,7 +35,7 @@
     "next": "下一步",
     "start": "開始",
     "settingUp": "設定中…",
-    "footer": "繼續即表示您同意 Movaia 的服務條款與隱私權政策。您的資料絕不會與其他顧客分享。",
+    "footer": "繼續即表示您同意 Movaia 的<terms>服務條款</terms>與<privacy>隱私權政策</privacy>。您的資料絕不會與其他顧客分享。",
     "errors": {
       "firstName": "請輸入您的名字。",
       "lastName": "請輸入您的姓氏。",

@@ -35,7 +35,7 @@
     "next": "Susunod",
     "start": "Simulan",
     "settingUp": "Nagse-set up…",
-    "footer": "Sa pagpapatuloy, sumasang-ayon ka sa terms & privacy policy ng Movaia. Hindi kailanman ibinabahagi ang iyong datos sa ibang customer.",
+    "footer": "Sa pagpapatuloy, sumasang-ayon ka sa <terms>terms of service</terms> & <privacy>privacy policy</privacy> ng Movaia. Hindi kailanman ibinabahagi ang iyong datos sa ibang customer.",
     "errors": {
       "firstName": "Pakilagay ang iyong pangalan.",
       "lastName": "Pakilagay ang iyong apelyido.",

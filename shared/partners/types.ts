@@ -21,7 +21,11 @@ export const DEFAULT_THEME: PartnerTheme = {
   colors: {
     primary: '#ABD037',
     primaryHover: '#98B830',
-    onPrimary: '#0F1115',
-    accent: '#3B82F6',
+    // Dark "ink on green" (Tailwind movaia.ink) — AA-readable text on the lime
+    // primary; matches --brand-on-primary and the DB default.
+    onPrimary: '#1c2b00',
+    // Green-family secondary (Movaia's "green text on light surfaces" token,
+    // AA-readable on white — e.g. the kiosk "Done" button label).
+    accent: '#5a7d16',
   },
 };

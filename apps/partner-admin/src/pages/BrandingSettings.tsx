@@ -6,10 +6,16 @@ import { LayoutGrid, Store, Palette, Upload, ExternalLink, Copy, ScrollText } fr
 import AdminShell, { NavItem, shellUserFromStaff } from '@shared/ui/AdminShell';
 import { useAuth } from '@shared/contexts/AuthContext';
 import { useToast } from '@shared/ui/Toast';
-import { brandingService } from '@shared/services/branding.service';
+import { brandingService, type Branding } from '@shared/services/branding.service';
 
-const PRIMARY_SWATCHES = ['#0e9e9e', '#e0930f', '#d64a43', '#6a5cff', '#141414'];
-const ACCENT_SWATCHES = ['#0b6e6e', '#141414', '#686868'];
+// Movaia house green leads — it's the real default kiosk theme (backend
+// Branding.primaryColor + DEFAULT_THEME both default to #ABD037), so a partner
+// who never customizes sees it pre-selected here.
+const PRIMARY_SWATCHES = ['#ABD037', '#0e9e9e', '#e0930f', '#d64a43', '#6a5cff', '#141414'];
+// Secondary/accent presets — green-family, matching the default kiosk theme.
+// #5a7d16 leads (the AA-safe green-on-light token); partners can still pick any
+// color via the custom picker.
+const ACCENT_SWATCHES = ['#5a7d16', '#7a9326', '#1c2b00'];
 
 // A slightly darker shade for the button-hover token so the kiosk stays cohesive
 // when the primary changes.
@@ -35,8 +41,16 @@ export default function BrandingSettings() {
     { icon: <Store size={16} />, label: t('nav.branches'), to: '/partner/stores' },
     { icon: <Palette size={16} />, label: t('nav.branding'), to: '/partner/branding', active: true },
   ];
-  const [primary, setPrimary] = useState('#0e9e9e');
-  const [accent, setAccent] = useState('#0b6e6e');
+  const [primary, setPrimary] = useState('#ABD037');
+  const [accent, setAccent] = useState('#5a7d16');
+  // Whether the partner has an explicit accent. False on the default so Publish
+  // omits it (the kiosk falls back to the green default) instead of stamping a
+  // color they never chose. Flips true on load-from-DB or a manual pick.
+  const [accentSet, setAccentSet] = useState(false);
+  const pickAccent = (c: string) => {
+    setAccent(c);
+    setAccentSet(true);
+  };
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -46,7 +60,10 @@ export default function BrandingSettings() {
     brandingService.getMine().then((r) => {
       if (r.branding) {
         setPrimary(r.branding.primaryColor);
-        if (r.branding.accentColor) setAccent(r.branding.accentColor);
+        if (r.branding.accentColor) {
+          setAccent(r.branding.accentColor);
+          setAccentSet(true);
+        }
         setLogoUrl(r.branding.logoUrl);
       }
     });
@@ -55,7 +72,9 @@ export default function BrandingSettings() {
   const publish = async () => {
     setBusy(true);
     try {
-      await brandingService.update({ primaryColor: primary, primaryHover: darken(primary), accentColor: accent });
+      const patch: Partial<Branding> = { primaryColor: primary, primaryHover: darken(primary) };
+      if (accentSet) patch.accentColor = accent; // omit → keep the green default, don't stamp an unchosen color
+      await brandingService.update(patch);
       toast(t('branding.published'), 'success');
     } catch {
       toast(t('branding.publishError'), 'error');
@@ -188,9 +207,9 @@ export default function BrandingSettings() {
           <Panel title={t('branding.accentColor')}>
             <div className="flex flex-wrap items-center gap-2.5">
               {ACCENT_SWATCHES.map((c) => (
-                <Swatch key={c} color={c} selected={c.toLowerCase() === accent.toLowerCase()} onClick={() => setAccent(c)} />
+                <Swatch key={c} color={c} selected={c.toLowerCase() === accent.toLowerCase()} onClick={() => pickAccent(c)} />
               ))}
-              <ColorInput value={accent} onChange={setAccent} />
+              <ColorInput value={accent} onChange={pickAccent} />
             </div>
           </Panel>
         </div>

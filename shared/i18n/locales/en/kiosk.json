@@ -35,7 +35,7 @@
     "next": "Next",
     "start": "Start",
     "settingUp": "Setting up…",
-    "footer": "By continuing you agree to Movaia's terms & privacy policy. Your data is never shared with other customers.",
+    "footer": "By continuing you agree to Movaia's <terms>terms of service</terms> & <privacy>privacy policy</privacy>. Your data is never shared with other customers.",
     "errors": {
       "firstName": "Please enter your first name.",
       "lastName": "Please enter your last name.",

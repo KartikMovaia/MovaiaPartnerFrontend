@@ -35,7 +35,7 @@
     "next": "다음",
     "start": "시작",
     "settingUp": "준비 중…",
-    "footer": "계속 진행하면 Movaia의 이용약관 및 개인정보 처리방침에 동의하는 것입니다. 귀하의 데이터는 다른 고객과 절대 공유되지 않습니다.",
+    "footer": "계속 진행하면 Movaia의 <terms>이용약관</terms> 및 <privacy>개인정보 처리방침</privacy>에 동의하는 것입니다. 귀하의 데이터는 다른 고객과 절대 공유되지 않습니다.",
     "errors": {
       "firstName": "이름을 입력해 주세요.",
       "lastName": "성을 입력해 주세요.",

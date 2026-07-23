@@ -35,7 +35,7 @@
     "next": "Weiter",
     "start": "Starten",
     "settingUp": "Wird vorbereitet…",
-    "footer": "Mit dem Fortfahren stimmen Sie den Nutzungsbedingungen und der Datenschutzerklärung von Movaia zu. Ihre Daten werden niemals mit anderen Kundinnen und Kunden geteilt.",
+    "footer": "Mit dem Fortfahren stimmen Sie den <terms>Nutzungsbedingungen</terms> und der <privacy>Datenschutzerklärung</privacy> von Movaia zu. Ihre Daten werden niemals mit anderen Kundinnen und Kunden geteilt.",
     "errors": {
       "firstName": "Bitte geben Sie Ihren Vornamen ein.",
       "lastName": "Bitte geben Sie Ihren Nachnamen ein.",

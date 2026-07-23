@@ -739,7 +739,28 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
         </div>
         <div className="px-6 pb-[30px] pt-[22px] sm:px-10 lg:px-12 xl:px-16 2xl:px-[90px]">
           <span className="text-[13px]" style={{ color: '#9a9a9a' }}>
-            {t('welcome.footer')}
+            <Trans
+              t={t}
+              i18nKey="welcome.footer"
+              components={{
+                terms: (
+                  <a
+                    href="https://movaia.com/terms-of-services"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-[#141414]"
+                  />
+                ),
+                privacy: (
+                  <a
+                    href="https://movaia.com/privacy-policy/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-[#141414]"
+                  />
+                ),
+              }}
+            />
           </span>
         </div>
       </div>
