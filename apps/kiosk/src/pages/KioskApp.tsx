@@ -36,7 +36,8 @@ type Step =
   | 'uploading'
   | 'done'
   | 'error-camera'
-  | 'error-upload';
+  | 'error-upload'
+  | 'error-unsupported';
 
 interface Recognized {
   firstName: string;
@@ -309,6 +310,13 @@ function KioskFlow() {
   }
 
   const identify = async (d: IdentifyDetails) => {
+    // MP4-capable recorder required (see pickMime). Checked BEFORE the identify
+    // call so an unsupported browser never creates a Movaia athlete/analysis/
+    // presigned URL for a session that can't produce an analyzable clip.
+    if (!pickMime()) {
+      setStep('error-unsupported');
+      return;
+    }
     const res = await kioskService.identify({
       kioskSessionId: sessionRef.current,
       firstName: d.firstName,
@@ -364,6 +372,8 @@ function KioskFlow() {
         return <CameraDenied theme={theme} onRetry={() => setStep('preroll')} onHome={goHome} />;
       case 'error-upload':
         return <UploadFailed theme={theme} onRetry={() => setStep('uploading')} onHome={goHome} />;
+      case 'error-unsupported':
+        return <UnsupportedDevice theme={theme} onHome={goHome} />;
       default:
         return <Welcome key={resetNonce} theme={theme} onStart={identify} />;
     }
@@ -577,6 +587,13 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
     setFormStep(2);
   };
 
+  // Step 2 → 1. All fields live on this component, so returning keeps everything
+  // the customer already typed — they can review/fix name + email and come back.
+  const back = () => {
+    setError(null);
+    setFormStep(1);
+  };
+
   const start = async () => {
     if (busy) return;
     if (!firstName.trim()) return setError(t('welcome.errors.firstName'));
@@ -724,22 +741,60 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
             </span>
           )}
         </div>
-        <button
-          onClick={formStep === 1 ? next : start}
-          disabled={formStep === 1 ? !whoValid : !ready || busy}
-          className="flex h-[72px] max-w-[620px] items-center justify-center gap-3 rounded-[14px] text-[22px] font-bold disabled:opacity-40"
-          style={brandBtn}
-        >
-          {formStep === 1
-            ? `${t('welcome.next')}  →`
-            : busy
-              ? t('welcome.settingUp')
-              : `${t('welcome.start')}  →`}
-        </button>
+        {formStep === 1 ? (
+          <button
+            onClick={next}
+            disabled={!whoValid}
+            className="flex h-[72px] max-w-[620px] items-center justify-center gap-3 rounded-[14px] text-[22px] font-bold disabled:opacity-40"
+            style={brandBtn}
+          >
+            {t('welcome.next')}  →
+          </button>
+        ) : (
+          <div className="flex w-full max-w-[620px] gap-3.5">
+            <button
+              onClick={back}
+              disabled={busy}
+              className="flex h-[72px] flex-1 items-center justify-center gap-2 rounded-[14px] border-2 text-[19px] font-semibold disabled:opacity-40"
+              style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}
+            >
+              ←  {t('welcome.back')}
+            </button>
+            <button
+              onClick={start}
+              disabled={!ready || busy}
+              className="flex h-[72px] flex-[2] items-center justify-center gap-3 rounded-[14px] text-[22px] font-bold disabled:opacity-40"
+              style={brandBtn}
+            >
+              {busy ? t('welcome.settingUp') : `${t('welcome.start')}  →`}
+            </button>
+          </div>
+        )}
         </div>
         <div className="px-6 pb-[30px] pt-[22px] sm:px-10 lg:px-12 xl:px-16 2xl:px-[90px]">
           <span className="text-[13px]" style={{ color: '#9a9a9a' }}>
-            {t('welcome.footer')}
+            <Trans
+              t={t}
+              i18nKey="welcome.footer"
+              components={{
+                terms: (
+                  <a
+                    href="https://movaia.com/terms-of-services"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-[#141414]"
+                  />
+                ),
+                privacy: (
+                  <a
+                    href="https://movaia.com/privacy-policy/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-[#141414]"
+                  />
+                ),
+              }}
+            />
           </span>
         </div>
       </div>
@@ -873,11 +928,20 @@ function GetReady({ onReady }: { onReady: () => void }) {
 
 /* ────────────────────── 04/05 · Pre-roll + Recording ────────────────────── */
 
-// Pick a MediaRecorder mime the browser actually supports (iPad Safari doesn't
-// do webm; falls back to mp4/H.264). Empty string = let the browser choose.
+// Pick an MP4 MediaRecorder mime — MP4/H.264 ONLY, no WebM fallback. The Movaia
+// analysis engine can't process WebM (run.movaia.com's own upload flow rejects
+// it), and the backend contract presigns the clip as scan.mp4 (lib/movaia.ts),
+// so a WebM recording would be uploaded mislabeled and produce a guaranteed
+// FAILED analysis. iPad Safari (the real kiosk device) and Chrome 126+ both
+// record MP4; browsers that can't (e.g. Firefox) are blocked at identify with
+// the unsupported-device screen instead of being allowed to record a dud.
 function pickMime(): string {
   if (typeof MediaRecorder === 'undefined') return '';
-  const candidates = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'];
+  const candidates = [
+    'video/mp4;codecs=avc1.42E01E', // H.264 baseline — safest for the analyzer
+    'video/mp4;codecs=avc1',
+    'video/mp4',
+  ];
   for (const t of candidates) if (MediaRecorder.isTypeSupported(t)) return t;
   return '';
 }
@@ -937,14 +1001,19 @@ function CameraStage({
     if (!stream) return; // still advances the UI even without a real camera
     chunksRef.current = [];
     try {
+      // MP4 only — never fall back to letting the browser choose (it would pick
+      // WebM, which the engine can't analyze). The normal flow is gated at
+      // identify; this also covers QA deep links (?screen=preroll), which just
+      // advance clipless like the simulated-camera path.
       const mime = pickMime();
-      const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      if (!mime) return;
+      const rec = new MediaRecorder(stream, { mimeType: mime });
       rec.ondataavailable = (e) => e.data.size && chunksRef.current.push(e.data);
       // Build the Blob when recording stops and hand it to the flow so it can be
       // played back in Review and uploaded for real.
       rec.onstop = () => {
         const blob = chunksRef.current.length
-          ? new Blob(chunksRef.current, { type: rec.mimeType || 'video/webm' })
+          ? new Blob(chunksRef.current, { type: rec.mimeType || 'video/mp4' })
           : null;
         onRecorded(blob);
       };
@@ -1050,13 +1119,20 @@ function CameraStage({
 
 function Review({ blob, onRecordAgain, onSubmit }: { blob: Blob | null; onRecordAgain: () => void; onSubmit: () => void }) {
   const { t } = useTranslation('kiosk');
+  // A scan may only be submitted with a real clip. A null/empty blob means
+  // recording produced no data (interrupted camera, killed recorder) — the old
+  // "will still be submitted" path confirmed an upload that never happened and
+  // guaranteed a FAILED analysis, so here it becomes a re-record instead.
+  const hasClip = blob !== null && blob.size > 0;
   // Create the playback URL in an effect (NOT useMemo) and revoke it in the SAME
   // effect's cleanup. The useMemo + separate-revoke pattern gets the URL revoked
   // out from under the <video> under React StrictMode's double-invoke, so the
   // clip never renders.
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
-    if (!blob) {
+    // Same predicate as hasClip, so an empty blob never renders a preview
+    // while the buttons are already in the no-clip state.
+    if (!blob || blob.size === 0) {
       setUrl(null);
       return;
     }
@@ -1076,20 +1152,32 @@ function Review({ blob, onRecordAgain, onSubmit }: { blob: Blob | null; onRecord
           ) : (
             <>
               <div className="absolute inset-0" style={{ background: 'repeating-linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,.02) 14px,transparent 14px,transparent 28px)' }} />
-              <span className="flex flex-col items-center gap-1.5 text-center">
-                <span className="text-[16px]" style={{ color: 'rgba(255,255,255,.7)' }}>{t('review.noPreview')}</span>
-                <span className="text-[13px]" style={{ color: 'rgba(255,255,255,.45)' }}>{t('review.noPreviewSub')}</span>
-              </span>
+              {/* url lags a real clip by one effect tick — only a missing clip gets the message */}
+              {!hasClip && (
+                <span className="flex flex-col items-center gap-1.5 text-center">
+                  <span className="text-[16px]" style={{ color: 'rgba(255,255,255,.7)' }}>{t('review.noClip')}</span>
+                  <span className="text-[13px]" style={{ color: 'rgba(255,255,255,.45)' }}>{t('review.noClipSub')}</span>
+                </span>
+              )}
             </>
           )}
         </div>
         <div className="mt-6 flex gap-3.5">
-          <button onClick={onRecordAgain} className="h-[72px] flex-1 rounded-[14px] border-2 text-[19px] font-semibold" style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}>
-            ↻ {t('review.recordAgain')}
-          </button>
-          <button onClick={onSubmit} className="h-[72px] flex-[2] rounded-[14px] text-[22px] font-bold" style={brandBtn}>
-            {t('review.submit')}  →
-          </button>
+          {hasClip ? (
+            <>
+              <button onClick={onRecordAgain} className="h-[72px] flex-1 rounded-[14px] border-2 text-[19px] font-semibold" style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}>
+                ↻ {t('review.recordAgain')}
+              </button>
+              <button onClick={onSubmit} className="h-[72px] flex-[2] rounded-[14px] text-[22px] font-bold" style={brandBtn}>
+                {t('review.submit')}  →
+              </button>
+            </>
+          ) : (
+            // No clip → no Submit. Re-record is the only way forward.
+            <button onClick={onRecordAgain} className="h-[72px] flex-1 rounded-[14px] text-[22px] font-bold" style={brandBtn}>
+              ↻ {t('review.recordAgain')}
+            </button>
+          )}
         </div>
       </div>
     </Screen>
@@ -1115,14 +1203,21 @@ function Uploading({
   const [pct, setPct] = useState(0);
 
   useEffect(() => {
+    // Backstop to Review's no-clip guard: submitting without an uploaded clip
+    // confirms a key with no S3 object behind it → guaranteed FAILED analysis.
+    // Only reachable via QA deep links (?screen=uploading) — never a real flow.
+    if (!blob || blob.size === 0) {
+      onError();
+      return;
+    }
     let mounted = true;
     (async () => {
       try {
-        if (blob && uploadUrl) {
+        if (uploadUrl) {
           // Real presigned PUT straight to Movaia's S3, with genuine progress.
           await kioskService.uploadVideo(uploadUrl, blob, (p) => mounted && setPct(p));
         } else if (mounted) {
-          setPct(100); // no real clip captured (simulated) — skip the PUT
+          setPct(100); // stubbed local run without a presigned URL — skip the PUT
         }
         await kioskService.submit(scanId);
         if (mounted) {
@@ -1219,6 +1314,31 @@ function CameraDenied({ theme, onRetry, onHome }: { theme: PartnerTheme; onRetry
             {t('cameraDenied.tryAgain')}
           </button>
         </div>
+      </div>
+    </Screen>
+  );
+}
+
+/* ──────────────────── 09b · Recording format unsupported ──────────────────── */
+
+// Shown when the browser can't record MP4 (see pickMime) — e.g. Firefox, or an
+// outdated Chrome. Terminal for this device: there's no retry that could help,
+// so the only action is back to start.
+function UnsupportedDevice({ theme, onHome }: { theme: PartnerTheme; onHome: () => void }) {
+  const { t } = useTranslation('kiosk');
+  return (
+    <Screen>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center sm:gap-7 sm:px-10">
+        <div className="flex h-[96px] w-[96px] items-center justify-center rounded-[28px] text-[44px] sm:h-[120px] sm:w-[120px] sm:text-[56px]" style={{ background: '#fce7e6', color: '#d64a43' }}>⚠</div>
+        <div className="flex flex-col gap-3">
+          <h1 className="m-0 text-[30px] font-extrabold sm:text-[40px]" style={{ letterSpacing: '-.8px' }}>{t('unsupported.title')}</h1>
+          <p className="m-0 max-w-[600px] text-[17px] leading-[1.55] sm:text-[19px]" style={{ color: '#686868' }}>
+            <Trans t={t} i18nKey="unsupported.desc" values={{ partner: theme.displayName }} components={{ bold: <b style={{ color: '#141414' }} /> }} />
+          </p>
+        </div>
+        <button onClick={onHome} className="h-[66px] rounded-[14px] px-10 text-[19px] font-bold" style={brandBtn}>
+          {t('unsupported.home')}
+        </button>
       </div>
     </Screen>
   );

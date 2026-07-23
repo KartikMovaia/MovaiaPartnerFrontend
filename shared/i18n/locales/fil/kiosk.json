@@ -33,9 +33,10 @@
     "helper": "Nakakatulong ang height at weight para i-tailor ang iyong analysis.",
     "consent": "Sumasang-ayon ako na i-record ako at na gumawa ang Movaia ng account para maihatid ang aking analysis, ayon sa <bold>terms & privacy policy</bold>.",
     "next": "Susunod",
+    "back": "Bumalik",
     "start": "Simulan",
     "settingUp": "Nagse-set up…",
-    "footer": "Sa pagpapatuloy, sumasang-ayon ka sa terms & privacy policy ng Movaia. Hindi kailanman ibinabahagi ang iyong datos sa ibang customer.",
+    "footer": "Sa pagpapatuloy, sumasang-ayon ka sa <terms>terms of service</terms> & <privacy>privacy policy</privacy> ng Movaia. Hindi kailanman ibinabahagi ang iyong datos sa ibang customer.",
     "errors": {
       "firstName": "Pakilagay ang iyong pangalan.",
       "lastName": "Pakilagay ang iyong apelyido.",
@@ -109,8 +110,8 @@
   "review": {
     "title": "Nasisiyahan ka ba sa iyong clip?",
     "subtitle": "Panoorin mo muna. Pwede kang mag-record ulit kung gusto mo.",
-    "noPreview": "Walang available na preview sa device na ito",
-    "noPreviewSub": "Ipapasa pa rin ang iyong clip para sa analysis.",
+    "noClip": "Hindi na-capture ang iyong clip",
+    "noClipSub": "Maaari itong mangyari kapag naantala ang camera. Mag-record ulit.",
     "recordAgain": "Mag-record ulit",
     "submit": "Ipasa para sa analysis"
   },
@@ -134,6 +135,11 @@
     "desc": "Para ma-record ang iyong pagtakbo, kailangan namin ng pahintulot na gamitin ang camera ng iPad na ito. I-enable ito sa <bold>Settings → {{partner}} → Camera</bold>, saka subukan muli.",
     "getHelp": "Humingi ng tulong sa staff",
     "tryAgain": "Subukan muli"
+  },
+  "unsupported": {
+    "title": "Hindi makapag-record ng scan ang device na ito",
+    "desc": "Hindi makapag-record ng video ang browser na ito sa MP4 format na sinusuri ng Movaia. Gamitin ang kiosk iPad na bigay ng <bold>{{partner}}</bold>, o i-update ang browser na ito at subukan muli.",
+    "home": "Bumalik sa simula"
   },
   "uploadFailed": {
     "title": "Hindi natuloy ang upload",

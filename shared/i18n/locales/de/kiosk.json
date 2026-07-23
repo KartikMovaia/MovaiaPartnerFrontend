@@ -33,9 +33,10 @@
     "helper": "Größe und Gewicht helfen, Ihre Analyse anzupassen.",
     "consent": "Ich stimme zu, aufgezeichnet zu werden und dass Movaia ein Konto erstellt, um mir meine Analyse bereitzustellen, gemäß den <bold>Nutzungsbedingungen und der Datenschutzerklärung</bold>.",
     "next": "Weiter",
+    "back": "Zurück",
     "start": "Starten",
     "settingUp": "Wird vorbereitet…",
-    "footer": "Mit dem Fortfahren stimmen Sie den Nutzungsbedingungen und der Datenschutzerklärung von Movaia zu. Ihre Daten werden niemals mit anderen Kundinnen und Kunden geteilt.",
+    "footer": "Mit dem Fortfahren stimmen Sie den <terms>Nutzungsbedingungen</terms> und der <privacy>Datenschutzerklärung</privacy> von Movaia zu. Ihre Daten werden niemals mit anderen Kundinnen und Kunden geteilt.",
     "errors": {
       "firstName": "Bitte geben Sie Ihren Vornamen ein.",
       "lastName": "Bitte geben Sie Ihren Nachnamen ein.",
@@ -109,8 +110,8 @@
   "review": {
     "title": "Zufrieden mit Ihrem Clip?",
     "subtitle": "Schauen Sie ihn sich kurz an. Sie können bei Bedarf neu aufnehmen.",
-    "noPreview": "Auf diesem Gerät ist keine Vorschau verfügbar",
-    "noPreviewSub": "Ihr Clip wird trotzdem zur Analyse übermittelt.",
+    "noClip": "Wir konnten Ihren Clip nicht aufnehmen",
+    "noClipSub": "Das kann passieren, wenn die Kamera unterbrochen wird. Bitte nehmen Sie erneut auf.",
     "recordAgain": "Neu aufnehmen",
     "submit": "Zur Analyse senden"
   },
@@ -134,6 +135,11 @@
     "desc": "Um Ihren Lauf aufzunehmen, benötigen wir die Erlaubnis, die Kamera dieses iPads zu nutzen. Aktivieren Sie sie unter <bold>Einstellungen → {{partner}} → Kamera</bold> und versuchen Sie es erneut.",
     "getHelp": "Mitarbeitende um Hilfe bitten",
     "tryAgain": "Erneut versuchen"
+  },
+  "unsupported": {
+    "title": "Dieses Gerät kann keine Scans aufnehmen",
+    "desc": "Dieser Browser kann Videos nicht im MP4-Format aufnehmen, das Movaia analysiert. Bitte verwenden Sie das von <bold>{{partner}}</bold> bereitgestellte Kiosk-iPad oder aktualisieren Sie diesen Browser und versuchen Sie es erneut.",
+    "home": "Zurück zum Start"
   },
   "uploadFailed": {
     "title": "Upload nicht erfolgreich",

@@ -33,9 +33,10 @@
     "helper": "身高與體重有助於調整您的分析。",
     "consent": "我同意接受錄影，並同意 Movaia 建立帳號以提供我的分析，並遵守<bold>服務條款與隱私權政策</bold>。",
     "next": "下一步",
+    "back": "返回",
     "start": "開始",
     "settingUp": "設定中…",
-    "footer": "繼續即表示您同意 Movaia 的服務條款與隱私權政策。您的資料絕不會與其他顧客分享。",
+    "footer": "繼續即表示您同意 Movaia 的<terms>服務條款</terms>與<privacy>隱私權政策</privacy>。您的資料絕不會與其他顧客分享。",
     "errors": {
       "firstName": "請輸入您的名字。",
       "lastName": "請輸入您的姓氏。",
@@ -109,8 +110,8 @@
   "review": {
     "title": "對這段影片滿意嗎？",
     "subtitle": "快速看一下。若需要，您也可以重新錄製。",
-    "noPreview": "此裝置無法預覽",
-    "noPreviewSub": "您的影片仍會提交進行分析。",
+    "noClip": "未能擷取您的影片",
+    "noClipSub": "相機中斷時可能會發生這種情況。請重新錄製。",
     "recordAgain": "重新錄製",
     "submit": "提交分析"
   },
@@ -134,6 +135,11 @@
     "desc": "為了錄製您的跑步影片，我們需要使用這台 iPad 相機的權限。請至 <bold>設定 → {{partner}} → 相機</bold> 開啟權限，然後再試一次。",
     "getHelp": "尋求工作人員協助",
     "tryAgain": "再試一次"
+  },
+  "unsupported": {
+    "title": "此裝置無法錄製掃描",
+    "desc": "此瀏覽器無法以 Movaia 分析所需的 MP4 格式錄影。請使用 <bold>{{partner}}</bold> 提供的機台 iPad，或更新此瀏覽器後再試一次。",
+    "home": "返回開始畫面"
   },
   "uploadFailed": {
     "title": "上傳未成功",

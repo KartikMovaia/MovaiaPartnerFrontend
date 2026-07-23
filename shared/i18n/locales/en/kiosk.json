@@ -33,9 +33,10 @@
     "helper": "Height & weight help tailor your analysis.",
     "consent": "I agree to be recorded and to Movaia creating an account to deliver my analysis, per the <bold>terms & privacy policy</bold>.",
     "next": "Next",
+    "back": "Back",
     "start": "Start",
     "settingUp": "Setting up…",
-    "footer": "By continuing you agree to Movaia's terms & privacy policy. Your data is never shared with other customers.",
+    "footer": "By continuing you agree to Movaia's <terms>terms of service</terms> & <privacy>privacy policy</privacy>. Your data is never shared with other customers.",
     "errors": {
       "firstName": "Please enter your first name.",
       "lastName": "Please enter your last name.",
@@ -109,8 +110,8 @@
   "review": {
     "title": "Happy with your clip?",
     "subtitle": "Give it a quick watch. You can re-record if you'd like.",
-    "noPreview": "No preview available on this device",
-    "noPreviewSub": "Your clip will still be submitted for analysis.",
+    "noClip": "We couldn't capture your clip",
+    "noClipSub": "This can happen if the camera gets interrupted. Please record again.",
     "recordAgain": "Record again",
     "submit": "Submit for analysis"
   },
@@ -134,6 +135,11 @@
     "desc": "To record your run we need permission to use this iPad's camera. Enable it in <bold>Settings → {{partner}} → Camera</bold>, then try again.",
     "getHelp": "Get staff help",
     "tryAgain": "Try again"
+  },
+  "unsupported": {
+    "title": "This device can't record scans",
+    "desc": "This browser can't record video in the MP4 format Movaia analyzes. Please use the kiosk iPad provided by <bold>{{partner}}</bold>, or update this browser and try again.",
+    "home": "Back to start"
   },
   "uploadFailed": {
     "title": "Upload didn't go through",
