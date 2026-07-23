@@ -577,6 +577,13 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
     setFormStep(2);
   };
 
+  // Step 2 → 1. All fields live on this component, so returning keeps everything
+  // the customer already typed — they can review/fix name + email and come back.
+  const back = () => {
+    setError(null);
+    setFormStep(1);
+  };
+
   const start = async () => {
     if (busy) return;
     if (!firstName.trim()) return setError(t('welcome.errors.firstName'));
@@ -724,18 +731,35 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
             </span>
           )}
         </div>
-        <button
-          onClick={formStep === 1 ? next : start}
-          disabled={formStep === 1 ? !whoValid : !ready || busy}
-          className="flex h-[72px] max-w-[620px] items-center justify-center gap-3 rounded-[14px] text-[22px] font-bold disabled:opacity-40"
-          style={brandBtn}
-        >
-          {formStep === 1
-            ? `${t('welcome.next')}  →`
-            : busy
-              ? t('welcome.settingUp')
-              : `${t('welcome.start')}  →`}
-        </button>
+        {formStep === 1 ? (
+          <button
+            onClick={next}
+            disabled={!whoValid}
+            className="flex h-[72px] max-w-[620px] items-center justify-center gap-3 rounded-[14px] text-[22px] font-bold disabled:opacity-40"
+            style={brandBtn}
+          >
+            {t('welcome.next')}  →
+          </button>
+        ) : (
+          <div className="flex w-full max-w-[620px] gap-3.5">
+            <button
+              onClick={back}
+              disabled={busy}
+              className="flex h-[72px] flex-1 items-center justify-center gap-2 rounded-[14px] border-2 text-[19px] font-semibold disabled:opacity-40"
+              style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}
+            >
+              ←  {t('welcome.back')}
+            </button>
+            <button
+              onClick={start}
+              disabled={!ready || busy}
+              className="flex h-[72px] flex-[2] items-center justify-center gap-3 rounded-[14px] text-[22px] font-bold disabled:opacity-40"
+              style={brandBtn}
+            >
+              {busy ? t('welcome.settingUp') : `${t('welcome.start')}  →`}
+            </button>
+          </div>
+        )}
         </div>
         <div className="px-6 pb-[30px] pt-[22px] sm:px-10 lg:px-12 xl:px-16 2xl:px-[90px]">
           <span className="text-[13px]" style={{ color: '#9a9a9a' }}>
