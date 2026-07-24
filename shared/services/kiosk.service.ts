@@ -4,13 +4,13 @@
 import axios from 'axios';
 import { kioskApi, deviceToken } from './api.service';
 
+// The kiosk client intentionally receives no account-existence flag or customer
+// PII — see the backend identify() note. It needs only the scan id + upload URL.
 export interface IdentifyResult {
   scanId: string;
   analysisId: string;
   uploadUrl: string;
   key: string;
-  isReturning: boolean;
-  customer: { firstName: string; email: string };
 }
 
 export interface DeviceBinding {

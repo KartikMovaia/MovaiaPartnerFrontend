@@ -67,14 +67,6 @@
       }
     }
   },
-  "returning": {
-    "eyebrow": "おかえりなさい",
-    "title": "{{name}}さん、またお会いできましたね！",
-    "desc": "あなたのアカウント（<bold>{{email}}</bold>）が見つかりました。もう一度ラン分析を始めますか？",
-    "notMe": "自分ではありません",
-    "continue": "続ける",
-    "lastAnalysis": "前回の分析：{{date}}"
-  },
   "getReady": {
     "step": "ステップ 1 / 3 · 準備",
     "title": "さあ、走りましょう",
@@ -105,7 +97,8 @@
     "prerollHint": "撮影が始まるとビープ音が鳴ります",
     "recordingTitle": "そのまま走り続けてください — その調子です",
     "secondsLeft_one": "残り{{count}}秒",
-    "secondsLeft_other": "残り{{count}}秒"
+    "secondsLeft_other": "残り{{count}}秒",
+    "switchCamera": "カメラを切り替え"
   },
   "review": {
     "title": "このクリップでよろしいですか？",
@@ -124,7 +117,7 @@
   },
   "confirmation": {
     "title": "準備完了です！",
-    "desc": "分析結果が準備でき次第、<bold>{{email}}</bold>宛にメールでお送りします。",
+    "desc": "レポートの作成には約5分かかります。準備ができ次第、<bold>{{email}}</bold>宛にメールでお送りしますので、ここでお待ちいただく必要はありません。",
     "inbox": "受信トレイ",
     "done": "完了",
     "resetIn_one": "{{count}}秒後に最初の画面に戻ります · このデバイスにお客様の情報は保存されません",

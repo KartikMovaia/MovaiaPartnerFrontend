@@ -67,14 +67,6 @@
       }
     }
   },
-  "returning": {
-    "eyebrow": "Maligayang pagbabalik",
-    "title": "Kumusta ulit, {{name}}!",
-    "desc": "Nakita namin ang iyong account — <bold>{{email}}</bold>. Handa ka na ba para sa isa pang run analysis?",
-    "notMe": "Hindi ako ito",
-    "continue": "Magpatuloy",
-    "lastAnalysis": "Ang iyong huling analysis: {{date}}"
-  },
   "getReady": {
     "step": "Hakbang 1 ng 3 · Maghanda",
     "title": "Tara, tumakbo na tayo",
@@ -105,7 +97,8 @@
     "prerollHint": "May maririnig kang beep kapag nagsimula ang recording",
     "recordingTitle": "Magpatuloy sa pagtakbo — magaling ka",
     "secondsLeft_one": "{{count}} segundo na lang",
-    "secondsLeft_other": "{{count}} segundo na lang"
+    "secondsLeft_other": "{{count}} segundo na lang",
+    "switchCamera": "Palitan ang camera"
   },
   "review": {
     "title": "Nasisiyahan ka ba sa iyong clip?",
@@ -124,7 +117,7 @@
   },
   "confirmation": {
     "title": "Handa na lahat!",
-    "desc": "Ie-email namin ang iyong analysis sa <bold>{{email}}</bold> sa sandaling handa na ito.",
+    "desc": "Mga 5 minuto ang kailangan para maihanda ang iyong report. Ie-email namin ito sa <bold>{{email}}</bold> kapag handa na — hindi mo na kailangang maghintay dito.",
     "inbox": "iyong inbox",
     "done": "Tapos na",
     "resetIn_one": "Babalik sa simula sa {{count}}s · hindi itatago ng device na ito ang iyong mga detalye",

@@ -67,14 +67,6 @@
       }
     }
   },
-  "returning": {
-    "eyebrow": "다시 오신 것을 환영합니다",
-    "title": "{{name}}님, 다시 오셨네요!",
-    "desc": "계정을 찾았습니다 — <bold>{{email}}</bold>. 다시 러닝 분석을 진행할까요?",
-    "notMe": "제가 아니에요",
-    "continue": "계속",
-    "lastAnalysis": "지난 분석: {{date}}"
-  },
   "getReady": {
     "step": "3단계 중 1단계 · 준비",
     "title": "이제 달려볼까요",
@@ -105,7 +97,8 @@
     "prerollHint": "촬영이 시작되면 삐 소리가 납니다",
     "recordingTitle": "계속 달리세요 — 아주 잘하고 있어요",
     "secondsLeft_one": "{{count}}초 남음",
-    "secondsLeft_other": "{{count}}초 남음"
+    "secondsLeft_other": "{{count}}초 남음",
+    "switchCamera": "카메라 전환"
   },
   "review": {
     "title": "영상이 마음에 드시나요?",
@@ -124,7 +117,7 @@
   },
   "confirmation": {
     "title": "모두 완료되었습니다!",
-    "desc": "분석이 준비되는 대로 <bold>{{email}}</bold>(으)로 이메일을 보내 드립니다.",
+    "desc": "보고서 준비에는 약 5분이 걸립니다. 준비되는 대로 <bold>{{email}}</bold>(으)로 이메일을 보내 드리니 여기서 기다리실 필요는 없습니다.",
     "inbox": "받은편지함",
     "done": "완료",
     "resetIn_one": "{{count}}초 후 처음 화면으로 돌아갑니다 · 이 기기는 귀하의 정보를 저장하지 않습니다",

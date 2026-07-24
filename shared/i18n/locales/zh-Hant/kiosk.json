@@ -67,14 +67,6 @@
       }
     }
   },
-  "returning": {
-    "eyebrow": "歡迎回來",
-    "title": "{{name}}，很高興再次見到您！",
-    "desc": "我們找到了您的帳號 — <bold>{{email}}</bold>。準備好再進行一次跑姿分析了嗎？",
-    "notMe": "不是我",
-    "continue": "繼續",
-    "lastAnalysis": "您上次的分析：{{date}}"
-  },
   "getReady": {
     "step": "第 1 步，共 3 步 · 準備開始",
     "title": "開始跑步吧",
@@ -105,7 +97,8 @@
     "prerollHint": "錄影開始時您會聽到一聲嗶",
     "recordingTitle": "繼續跑 — 您表現得很好",
     "secondsLeft_one": "還剩 {{count}} 秒",
-    "secondsLeft_other": "還剩 {{count}} 秒"
+    "secondsLeft_other": "還剩 {{count}} 秒",
+    "switchCamera": "切換鏡頭"
   },
   "review": {
     "title": "對這段影片滿意嗎？",
@@ -124,7 +117,7 @@
   },
   "confirmation": {
     "title": "一切就緒！",
-    "desc": "分析完成後，我們會立即將結果寄到 <bold>{{email}}</bold>。",
+    "desc": "報告大約需要 5 分鐘準備。完成後我們會將結果寄到 <bold>{{email}}</bold>，您不需要在此等候。",
     "inbox": "您的信箱",
     "done": "完成",
     "resetIn_one": "{{count}} 秒後返回首頁 · 此裝置不會保留您的資料",

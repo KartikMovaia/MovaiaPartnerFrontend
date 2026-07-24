@@ -67,14 +67,6 @@
       }
     }
   },
-  "returning": {
-    "eyebrow": "Willkommen zurück",
-    "title": "Schön, Sie wiederzusehen, {{name}}!",
-    "desc": "Wir haben Ihr Konto gefunden — <bold>{{email}}</bold>. Bereit für eine weitere Laufanalyse?",
-    "notMe": "Nicht ich",
-    "continue": "Weiter",
-    "lastAnalysis": "Ihre letzte Analyse: {{date}}"
-  },
   "getReady": {
     "step": "Schritt 1 von 3 · Vorbereiten",
     "title": "Los geht's",
@@ -105,7 +97,8 @@
     "prerollHint": "Sie hören einen Piepton, wenn die Aufnahme startet",
     "recordingTitle": "Laufen Sie weiter — das machen Sie großartig",
     "secondsLeft_one": "Noch {{count}} Sekunde",
-    "secondsLeft_other": "Noch {{count}} Sekunden"
+    "secondsLeft_other": "Noch {{count}} Sekunden",
+    "switchCamera": "Kamera wechseln"
   },
   "review": {
     "title": "Zufrieden mit Ihrem Clip?",
@@ -124,7 +117,7 @@
   },
   "confirmation": {
     "title": "Alles erledigt!",
-    "desc": "Wir senden Ihre Analyse an <bold>{{email}}</bold>, sobald sie fertig ist.",
+    "desc": "Ihr Bericht ist in etwa 5 Minuten fertig. Wir senden ihn an <bold>{{email}}</bold>, sobald er bereit ist — Sie müssen hier nicht warten.",
     "inbox": "Ihr Postfach",
     "done": "Fertig",
     "resetIn_one": "Zurück zum Start in {{count}}s · dieses Gerät speichert Ihre Daten nicht",

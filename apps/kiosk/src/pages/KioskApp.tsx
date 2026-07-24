@@ -4,9 +4,14 @@
 // customer and keeps nothing between sessions.
 //
 // State machine (matches the design screens 01–10):
-//   welcome → [returning?] → ready → preroll(~20s) → recording(~10s) →
+//   welcome → ready → preroll(~20s) → recording(~10s) →
 //   review → uploading → done → (auto-reset to welcome)
-// with error branches: error-camera, error-upload.
+// with error branches: error-camera, error-upload, error-unsupported.
+//
+// This is a public shared device, so it never reveals stored account state: the
+// backend's identify response may say an email is a returning customer, but the
+// client ignores that and shows only what the customer just typed. No "welcome
+// back" / recognition screen — that would let anyone enumerate registered emails.
 //
 // Any state is previewable for QA via ?screen=<step> (e.g. ?screen=done).
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -28,7 +33,6 @@ const RECORD_SECONDS = 10; // recorded clip length
 
 type Step =
   | 'welcome'
-  | 'returning'
   | 'ready'
   | 'preroll'
   | 'recording'
@@ -38,13 +42,6 @@ type Step =
   | 'error-camera'
   | 'error-upload'
   | 'error-unsupported';
-
-interface Recognized {
-  firstName: string;
-  email: string;
-  lastAnalysis?: string;
-  initials?: string;
-}
 
 // What the Welcome form collects and hands to identify(). Height/weight are
 // normalized to canonical units (cm / kg) inside the form before they get here.
@@ -273,7 +270,9 @@ function KioskFlow() {
   const initial = (params.get('screen') as Step | null) ?? 'welcome';
 
   const [step, setStep] = useState<Step>(initial);
-  const [customer, setCustomer] = useState<Recognized>({ firstName: 'there', email: '' });
+  // Only the email the customer typed — solely to tell them where the report
+  // goes on the confirmation screen. We deliberately keep no stored account PII.
+  const [customerEmail, setCustomerEmail] = useState('');
   const [resetNonce, setResetNonce] = useState(0);
   const sessionRef = useRef<string>('');
   const scanRef = useRef<string>('');
@@ -289,7 +288,7 @@ function KioskFlow() {
   }, [newSession]);
 
   const goHome = useCallback(() => {
-    setCustomer({ firstName: 'there', email: '' });
+    setCustomerEmail('');
     blobRef.current = null;
     scanRef.current = '';
     uploadUrlRef.current = '';
@@ -328,16 +327,17 @@ function KioskFlow() {
     });
     scanRef.current = res.scanId;
     uploadUrlRef.current = res.uploadUrl;
-    setCustomer(res.customer);
-    setStep(res.isReturning ? 'returning' : 'ready');
+    // Shared public device: ignore the server's `isReturning`/`customer` (which
+    // reflect a stored account) so the kiosk can't reveal that an email is
+    // registered or leak its PII. Keep only the email the customer just typed.
+    setCustomerEmail(d.email);
+    setStep('ready');
   };
 
   const screen = (() => {
     switch (step) {
       case 'welcome':
         return <Welcome key={resetNonce} theme={theme} onStart={identify} />;
-      case 'returning':
-        return <Returning theme={theme} customer={customer} onContinue={() => setStep('ready')} onNotMe={goHome} />;
       case 'ready':
         return <GetReady onReady={() => setStep('preroll')} />;
       case 'preroll':
@@ -367,7 +367,7 @@ function KioskFlow() {
           />
         );
       case 'done':
-        return <Confirmation email={customer.email} onDone={goHome} />;
+        return <Confirmation email={customerEmail} onDone={goHome} />;
       case 'error-camera':
         return <CameraDenied theme={theme} onRetry={() => setStep('preroll')} onHome={goHome} />;
       case 'error-upload':
@@ -802,53 +802,6 @@ function Welcome({ theme, onStart }: { theme: PartnerTheme; onStart: (d: Identif
   );
 }
 
-/* ─────────────────────── 02 · Returning customer ─────────────────────── */
-
-function Returning({
-  theme,
-  customer,
-  onContinue,
-  onNotMe,
-}: {
-  theme: PartnerTheme;
-  customer: Recognized;
-  onContinue: () => void;
-  onNotMe: () => void;
-}) {
-  const { t } = useTranslation('kiosk');
-  return (
-    <Screen>
-      <KioskHeader theme={theme} />
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6 text-center sm:gap-[30px] sm:px-10 lg:px-[90px]">
-        <div
-          className="flex h-[92px] w-[92px] items-center justify-center rounded-full text-[36px] font-extrabold sm:h-[120px] sm:w-[120px] sm:text-[46px]"
-          style={{ background: 'color-mix(in srgb, var(--brand-primary) 16%, #fff)', color: 'var(--brand-primary)' }}
-        >
-          {customer.initials ?? customer.firstName.slice(0, 2).toUpperCase()}
-        </div>
-        <div className="flex flex-col gap-3">
-          <span className="text-[14px]" style={eyebrow}>{t('returning.eyebrow')}</span>
-          <h1 className="m-0 text-[32px] font-extrabold leading-[1.05] sm:text-[44px] lg:text-[48px]" style={{ letterSpacing: '-1px' }}>
-            {t('returning.title', { name: customer.firstName })}
-          </h1>
-          <p className="m-0 max-w-[560px] text-[17px] leading-[1.5] sm:text-[19px]" style={{ color: '#686868' }}>
-            <Trans t={t} i18nKey="returning.desc" values={{ email: customer.email }} components={{ bold: <b style={{ color: '#141414' }} /> }} />
-          </p>
-        </div>
-        <div className="flex w-full max-w-[620px] gap-3.5">
-          <button onClick={onNotMe} className="h-[72px] flex-1 rounded-[14px] border-2 text-[19px] font-semibold" style={{ borderColor: '#e4e4e4', background: '#fff', color: '#141414' }}>
-            {t('returning.notMe')}
-          </button>
-          <button onClick={onContinue} className="h-[72px] flex-[2] rounded-[14px] text-[22px] font-bold" style={brandBtn}>
-            {t('returning.continue')}  →
-          </button>
-        </div>
-        {customer.lastAnalysis && <span className="text-[14px]" style={{ color: '#9a9a9a' }}>{t('returning.lastAnalysis', { date: customer.lastAnalysis })}</span>}
-      </div>
-    </Screen>
-  );
-}
-
 /* ─────────────────────────── 03 · Get ready ─────────────────────────── */
 
 function GetReady({ onReady }: { onReady: () => void }) {
@@ -965,23 +918,35 @@ function CameraStage({
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
   const [live, setLive] = useState(false);
+  // Rear ('environment') by default — it's what films a runner from the side.
+  // The flip toggle switches to the front camera (e.g. operator self-setup);
+  // only changeable during preroll (the toggle is hidden while recording).
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
+  // Whether a second camera actually exists to flip to — gates the toggle so it
+  // never shows on a single-camera device. Only knowable after permission is
+  // granted, when enumerateDevices() finally returns the video inputs.
+  const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
   const [count, setCount] = useState(step === 'preroll' ? SETUP_SECONDS : RECORD_SECONDS);
 
-  // Acquire the camera once for the whole stage (kept across preroll→recording).
+  // Acquire the camera for the whole stage (kept across preroll→recording), and
+  // re-acquire when the operator flips front/rear. Cleanup stops the old stream
+  // first, so a flip is a clean stop-then-start feeding the same <video>.
   useEffect(() => {
     let cancelled = false;
+    setLive(false); // dim the feed while (re)acquisition is in flight
     (async () => {
       try {
         // Best-quality capture for the Movaia gait analyser: 1080p at 60fps from
-        // the rear camera. Frame rate matters as much as resolution for running —
-        // 60fps roughly doubles the frames of ground contact vs 30fps, sharpening
-        // foot-strike/cadence detection and cutting motion blur on fast limbs.
-        // All `ideal` (soft): a device that can't hit 1080p60 negotiates its best
-        // available mode instead of failing. Landscape hold (the iPad kiosk, or a
-        // phone turned sideways) maps the sensor 1:1 → upright 16:9, no rotation.
+        // the selected camera. Frame rate matters as much as resolution for
+        // running — 60fps roughly doubles the frames of ground contact vs 30fps,
+        // sharpening foot-strike/cadence detection and cutting motion blur on
+        // fast limbs. All `ideal` (soft): a device that can't hit 1080p60 (or
+        // lacks the requested camera) negotiates its best available mode instead
+        // of failing. Landscape hold (the iPad kiosk, or a phone turned sideways)
+        // maps the sensor 1:1 → upright 16:9, no rotation.
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
-            facingMode: 'environment',
+            facingMode,
             width: { ideal: 1920 },
             height: { ideal: 1080 },
             frameRate: { ideal: 60 },
@@ -995,6 +960,14 @@ function CameraStage({
         streamRef.current = stream;
         setLive(true);
         if (videoRef.current) videoRef.current.srcObject = stream;
+        // Labels/ids only populate once permission is granted — count the video
+        // inputs now so the flip toggle shows only when there's a 2nd camera.
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          if (!cancelled) setHasMultipleCameras(devices.filter((d) => d.kind === 'videoinput').length > 1);
+        } catch {
+          /* enumerateDevices unsupported — leave the toggle hidden */
+        }
       } catch {
         onCameraError();
       }
@@ -1004,7 +977,7 @@ function CameraStage({
       streamRef.current?.getTracks().forEach((t) => t.stop());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [facingMode]);
 
   const startRecording = useCallback(() => {
     const stream = streamRef.current;
@@ -1049,6 +1022,14 @@ function CameraStage({
     }
   }, [onRecorded]);
 
+  // Flip front↔rear. Guarded to preroll (the toggle is hidden elsewhere) so it
+  // can never tear down the stream mid-recording; the acquisition effect re-runs
+  // on the change and swaps the stream on the same <video>.
+  const switchCamera = useCallback(() => {
+    if (step !== 'preroll') return;
+    setFacingMode((m) => (m === 'environment' ? 'user' : 'environment'));
+  }, [step]);
+
   // One self-contained countdown per step. A LOCAL counter (not the display
   // `count` state) drives the transition, so a step change can never read a
   // stale count and fire the next transition early — which was ending the
@@ -1088,6 +1069,27 @@ function CameraStage({
       {step === 'preroll' && (
         <button onClick={onCancel} className="absolute right-[30px] top-6 h-11 rounded-full px-5 text-[15px] font-semibold" style={{ background: 'rgba(255,255,255,.12)', color: '#fff' }}>
           {t('camera.cancel')}
+        </button>
+      )}
+
+      {/* Front/rear flip — preroll only (never mid-recording), and only when a
+          second camera exists. Bottom-centre so it clears the top chrome and the
+          countdown ring; thumb-reachable on a landscape iPad. */}
+      {step === 'preroll' && hasMultipleCameras && (
+        <button
+          onClick={switchCamera}
+          aria-label={t('camera.switchCamera')}
+          className="absolute bottom-6 left-1/2 z-20 flex h-11 -translate-x-1/2 items-center gap-2 rounded-full px-5 text-[15px] font-semibold sm:bottom-8"
+          style={{ background: 'rgba(255,255,255,.12)', color: '#fff', backdropFilter: 'blur(4px)' }}
+        >
+          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" />
+            <path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5" />
+            <circle cx="12" cy="12" r="3" />
+            <path d="m18 22-3-3 3-3" />
+            <path d="m6 2 3 3-3 3" />
+          </svg>
+          {t('camera.switchCamera')}
         </button>
       )}
 

@@ -67,14 +67,6 @@
       }
     }
   },
-  "returning": {
-    "eyebrow": "Welcome back",
-    "title": "Hi again, {{name}}!",
-    "desc": "We found your account — <bold>{{email}}</bold>. Ready for another run analysis?",
-    "notMe": "Not me",
-    "continue": "Continue",
-    "lastAnalysis": "Your last analysis: {{date}}"
-  },
   "getReady": {
     "step": "Step 1 of 3 · Get ready",
     "title": "Let's get running",
@@ -105,7 +97,8 @@
     "prerollHint": "You'll hear a beep when recording starts",
     "recordingTitle": "Keep running — you're doing great",
     "secondsLeft_one": "{{count}} second left",
-    "secondsLeft_other": "{{count}} seconds left"
+    "secondsLeft_other": "{{count}} seconds left",
+    "switchCamera": "Flip camera"
   },
   "review": {
     "title": "Happy with your clip?",
@@ -124,7 +117,7 @@
   },
   "confirmation": {
     "title": "You're all set!",
-    "desc": "We'll email your analysis to <bold>{{email}}</bold> as soon as it's ready.",
+    "desc": "Your report takes about 5 minutes to prepare. We'll email it to <bold>{{email}}</bold> when it's ready — no need to wait here.",
     "inbox": "your inbox",
     "done": "Done",
     "resetIn_one": "Returning to start in {{count}}s · this device won't keep your details",
