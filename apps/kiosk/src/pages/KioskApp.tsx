@@ -972,8 +972,20 @@ function CameraStage({
     let cancelled = false;
     (async () => {
       try {
+        // Best-quality capture for the Movaia gait analyser: 1080p at 60fps from
+        // the rear camera. Frame rate matters as much as resolution for running —
+        // 60fps roughly doubles the frames of ground contact vs 30fps, sharpening
+        // foot-strike/cadence detection and cutting motion blur on fast limbs.
+        // All `ideal` (soft): a device that can't hit 1080p60 negotiates its best
+        // available mode instead of failing. Landscape hold (the iPad kiosk, or a
+        // phone turned sideways) maps the sensor 1:1 → upright 16:9, no rotation.
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+          video: {
+            facingMode: 'environment',
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            frameRate: { ideal: 60 },
+          },
           audio: false,
         });
         if (cancelled) {
@@ -1007,7 +1019,10 @@ function CameraStage({
       // advance clipless like the simulated-camera path.
       const mime = pickMime();
       if (!mime) return;
-      const rec = new MediaRecorder(stream, { mimeType: mime });
+      // High bitrate keeps limbs and feet crisp at 60fps — less compression mush
+      // and motion blur for the analyser to work from. ~12 Mbps is ample for
+      // 1080p60 H.264; the browser scales it down if a lower mode was negotiated.
+      const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12_000_000 });
       rec.ondataavailable = (e) => e.data.size && chunksRef.current.push(e.data);
       // Build the Blob when recording stops and hand it to the flow so it can be
       // played back in Review and uploaded for real.
